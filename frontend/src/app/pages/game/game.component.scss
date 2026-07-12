@@ -8,7 +8,8 @@
   min-height: 0;
 }
 
-.game-shell { position: relative; animation: game-fade-in .45s ease-out both; }
+.game-shell { position: relative; isolation: isolate; animation: game-fade-in .45s ease-out both; }
+.game-shell::before { content: ''; position: absolute; z-index: -1; width: min(72vw, 72rem); height: min(60vw, 48rem); top: 10%; left: 50%; border-radius: 50%; opacity: .45; transform: translateX(-50%); background: radial-gradient(circle, rgb(123 44 255 / .19), rgb(0 217 255 / .06) 39%, transparent 69%); filter: blur(30px); pointer-events: none; animation: shell-aura 12s ease-in-out infinite alternate; }
 .game-help { position: absolute; z-index: 25; top: .35rem; right: .35rem; }
 
 .rebound-queue { display: flex; flex-wrap: wrap; justify-content: center; gap: .45rem; margin: -0.45rem 0 .1rem; }
@@ -47,6 +48,8 @@
 
 .board-area { perspective: 1200px; }
 
+@keyframes shell-aura { from { transform: translateX(-50%) scale(.94); opacity: .32; } to { transform: translateX(-50%) scale(1.08); opacity: .56; } }
+
 @media (max-width: 1023px) {
   .score-area { height: 10.5rem; }
 }
@@ -82,7 +85,7 @@
 .turn-prep-button:hover { border-color: var(--color-primary-light); background: linear-gradient(135deg, oklch(0.58 0.28 290 / .48), oklch(0.65 0.28 340 / .38)); transform: translateY(-1px); }
 .turn-prep-button svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
 
-.opponents-categories { padding: .75rem 1rem; border: 1px solid rgb(255 255 255 / .1); border-radius: 1rem; }
+.opponents-categories { padding: .75rem 1rem; border: 1px solid rgb(188 133 255 / .24); border-radius: 1rem; background: linear-gradient(115deg, rgb(18 14 45 / .74), rgb(4 7 22 / .74)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .07), 0 12px 28px rgb(0 0 0 / .18); }
 .opponents-categories summary { cursor: pointer; color: rgb(255 255 255 / .75); font-size: .8rem; font-weight: 800; }
 .opponent-category-row { display: flex; align-items: center; gap: .45rem; padding-top: .65rem; }
 .opponent-category-row strong { margin-right: auto; overflow: hidden; color: white; font-size: .78rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
@@ -112,3 +115,5 @@
 .zwap-dialog__actions { display: flex; justify-content: flex-end; gap: .65rem; padding: 1rem 1.2rem; border-top: 1px solid rgb(255 255 255 / .1); }
 .zwap-cancel { padding: .65rem .9rem; border: 1px solid rgb(255 255 255 / .14); border-radius: .75rem; color: rgb(255 255 255 / .72); font-size: .82rem; font-weight: 800; cursor: pointer; }
 .zwap-confirm { min-height: 2.7rem; padding: .55rem 1rem; border-radius: .75rem; font-size: .82rem; }
+
+@media (prefers-reduced-motion: reduce) { .game-shell::before { animation: none; } }

@@ -1,8 +1,11 @@
-<main class="min-h-[100dvh] relative overflow-x-hidden">
-  <!-- Background decorative elements -->
-  <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-[-1]">
-    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px] animate-pulse-glow"></div>
-    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[100px] animate-pulse-glow" style="animation-delay: 2s;"></div>
+<main class="app-universe min-h-[100dvh] relative overflow-x-hidden">
+  <!-- Decorative layers only: game state and interaction stay inside routed components. -->
+  <div class="cosmic-atmosphere" aria-hidden="true">
+    <div class="cosmic-nebula cosmic-nebula--violet"></div>
+    <div class="cosmic-nebula cosmic-nebula--cyan"></div>
+    <div class="cosmic-energy-ribbon"></div>
+    <div class="cosmic-stars cosmic-stars--far"></div>
+    <div class="cosmic-stars cosmic-stars--near"></div>
   </div>
 
   <!-- Main Content -->

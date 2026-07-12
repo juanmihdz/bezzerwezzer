@@ -2,7 +2,11 @@
 .score-heading { display: inline-flex; align-items: center; gap: .55rem; }
 .score-heading svg { width: 1.35rem; height: 1.35rem; fill: none; stroke: var(--color-primary-light); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .rank-crown { width: 1.45rem; height: 1.45rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
-:host > div { border: 1px solid rgb(255 255 255 / .1); background: linear-gradient(155deg, rgb(27 23 44 / .82), rgb(10 8 20 / .78)); }
+:host > div { position: relative; overflow: hidden; border: 1px solid rgb(191 137 255 / .28); background: linear-gradient(155deg, rgb(24 17 53 / .88), rgb(5 7 23 / .84)); box-shadow: 0 24px 54px rgb(0 0 0 / .34), inset 0 1px 0 rgb(255 255 255 / .10), inset 0 0 40px rgb(123 44 255 / .04); }
+:host > div::before { content: ''; position: absolute; inset: auto -25% -20% auto; width: 13rem; height: 13rem; border-radius: 50%; background: radial-gradient(circle, rgb(255 25 200 / .15), transparent 68%); pointer-events: none; }
+:host ::ng-deep .flex.items-center.p-3 { border-color: rgb(195 141 255 / .14); background: linear-gradient(100deg, rgb(15 13 35 / .75), rgb(20 10 43 / .44)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .035); }
+:host ::ng-deep .flex.items-center.p-3:hover { transform: translateX(2px); border-color: rgb(207 144 255 / .32); }
+:host ::ng-deep .flex.items-center.p-3.z-10 { box-shadow: -4px 0 0 var(--color-accent), 0 10px 28px rgb(255 25 200 / .13), inset 0 1px 0 rgb(255 255 255 / .12); }
 
 @media (max-width: 1023px) {
   :host ::ng-deep .custom-scrollbar {
