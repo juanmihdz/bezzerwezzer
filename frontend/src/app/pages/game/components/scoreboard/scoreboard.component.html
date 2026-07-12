@@ -1,0 +1,94 @@
+<div class="glass p-4 xl:p-5 rounded-3xl h-full flex flex-col min-h-0">
+  <h3
+    class="text-xl xl:text-2xl font-black mb-4 flex flex-wrap gap-2 items-center justify-between tracking-wide"
+  >
+    <span class="score-heading"
+      ><svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M8 4h8v4c0 4-2 6-4 6s-4-2-4-6V4ZM8 6H4v2c0 2 2 3 4 3M16 6h4v2c0 2-2 3-4 3M12 14v4M8 21h8M9 18h6"
+        /></svg
+      >Clasificación</span
+    >
+    <span
+      class="text-xs font-bold text-accent bg-accent/15 px-4 py-2 rounded-full border border-accent/20 tracking-widest uppercase"
+    >
+      Ronda {{ currentRound }}
+    </span>
+  </h3>
+
+  <div class="flex flex-col gap-2.5 flex-grow overflow-y-auto pr-1 custom-scrollbar min-h-0">
+    @for (player of players; track player; let i = $index) {
+      <div
+        class="flex items-center p-3 rounded-2xl border transition-all duration-300 relative overflow-hidden"
+        [ngClass]="
+          player.playerId === currentTurnPlayerId
+            ? 'bg-gradient-to-r from-primary/15 to-accent/5 border-primary/40 shadow-lg shadow-primary/5 transform scale-[1.02] z-10'
+            : 'bg-black/20 border-white/5 hover:border-white/10 hover:bg-black/30'
+        "
+        [style.borderColor]="player.playerId === currentTurnPlayerId ? player.color + '50' : ''"
+      >
+        <!-- Current Turn Glowing Effect in Player Color -->
+        @if (player.playerId === currentTurnPlayerId) {
+          <div
+            class="absolute inset-0 opacity-20 blur-md z-0 animate-pulse-glow"
+            [style.backgroundColor]="player.color"
+          ></div>
+        }
+        <div class="relative z-10 flex items-center gap-4 w-full">
+          <!-- Rank Indicator -->
+          <div
+            class="w-10 font-display font-black text-center text-xl flex items-center justify-center"
+            [ngClass]="{
+              'text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.4)]': i === 0,
+              'text-gray-300': i === 1,
+              'text-amber-600': i === 2,
+              'text-text-muted/40': i > 2,
+            }"
+          >
+            @if (i === 0) {
+              <svg class="rank-crown" viewBox="0 0 24 24" aria-label="Primera posición">
+                <path d="m3 7 4.5 4L12 4l4.5 7L21 7l-1.5 10h-15L3 7Z" />
+              </svg>
+            }
+            @if (i !== 0) {
+              <span>{{ i + 1 }}</span>
+            }
+          </div>
+          <app-player-avatar
+            [username]="player.username"
+            [color]="player.color"
+            size="sm"
+            [showName]="false"
+            [isActive]="player.playerId === currentTurnPlayerId"
+          >
+          </app-player-avatar>
+          <div class="flex-grow min-w-0">
+            <h4
+              class="font-extrabold truncate text-base md:text-lg tracking-wide"
+              [ngClass]="player.playerId === currentTurnPlayerId ? 'text-white' : 'text-text-muted'"
+            >
+              {{ player.username }}
+            </h4>
+          </div>
+          <!-- Position/Score -->
+          <div class="flex flex-col items-end">
+            <span
+              class="font-black font-display text-2xl leading-none"
+              [ngClass]="
+                player.playerId === currentTurnPlayerId
+                  ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]'
+                  : 'text-text-muted'
+              "
+            >
+              {{ player.boardPosition }}
+            </span>
+            <span
+              class="text-[0.6rem] uppercase tracking-[0.15em] text-text-muted/60 font-bold mt-1"
+              >Casilla</span
+            >
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

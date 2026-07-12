@@ -1,0 +1,56 @@
+<div class="relative flex items-center justify-center" [ngClass]="sizeClasses[size]">
+  <!-- Background Circle -->
+  <svg
+    class="absolute inset-0 w-full h-full transform -rotate-90"
+    viewBox="0 0 100 100"
+    aria-hidden="true"
+  >
+    <circle
+      class="text-border transition-colors"
+      [style.stroke]="'currentColor'"
+      stroke-width="8"
+      fill="transparent"
+      r="42"
+      cx="50"
+      cy="50"
+    />
+
+    <!-- Progress Circle -->
+    <circle
+      class="transition-all duration-1000 ease-linear"
+      [ngClass]="colorClass"
+      [style.stroke]="'currentColor'"
+      stroke-width="8"
+      stroke-linecap="round"
+      fill="transparent"
+      r="42"
+      cx="50"
+      cy="50"
+      [style.strokeDasharray]="circumference"
+      [style.strokeDashoffset]="dashOffset"
+    />
+  </svg>
+
+  <!-- Center Text -->
+  <div class="relative z-10 flex flex-col items-center justify-center">
+    <span
+      class="font-display font-black leading-none"
+      [ngClass]="[textClasses[size], colorClass, isLowTime ? 'animate-pulse' : '']"
+    >
+      {{ remaining }}
+    </span>
+    @if (size !== 'sm') {
+      <span class="text-[0.65rem] font-bold uppercase tracking-widest text-text-muted mt-1"
+        >SEG</span
+      >
+    }
+  </div>
+
+  <!-- Pulse Glow for low time -->
+  @if (isLowTime) {
+    <div
+      class="absolute inset-0 rounded-full blur-xl animate-pulse-glow z-0"
+      [ngClass]="glowClass"
+    ></div>
+  }
+</div>

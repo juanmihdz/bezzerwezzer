@@ -1,0 +1,130 @@
+@if (question) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+    <!-- High Blur Immersive Backdrop -->
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-2xl animate-fade-in"></div>
+    <!-- Modal Content -->
+    <div
+      class="relative w-full max-w-4xl max-h-[94dvh] flex flex-col glass-strong rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.6)] animate-bounce-in border"
+      [style.borderColor]="question.categoryColor + '50'"
+      [style.boxShadow]="'0 0 50px ' + question.categoryColor + '15'"
+    >
+      <!-- Header / Category Color Bar -->
+      <div class="h-4 w-full" [style.backgroundColor]="question.categoryColor"></div>
+      <!-- Main Content Area -->
+      <div class="p-5 sm:p-7 md:p-10 flex flex-col flex-grow overflow-y-auto">
+        <div class="flex justify-between items-center gap-5 mb-7">
+          <!-- Category Badge Capsule -->
+          <div
+            class="flex items-center gap-4 bg-black/40 p-2 pr-6 rounded-full border border-white/5 shadow-inner"
+          >
+            <app-category-badge
+              [name]="question.categoryName"
+              [icon]="question.categoryIcon"
+              [color]="question.categoryColor"
+              [compact]="true"
+              compactSize="lg"
+            >
+            </app-category-badge>
+            <div>
+              <h4
+                class="text-[0.65rem] font-bold text-text-muted uppercase tracking-[0.2em] leading-none mb-1"
+              >
+                Categoría
+              </h4>
+              <h3 class="text-xl font-black text-white leading-tight uppercase tracking-wider">
+                {{ question.categoryName }}
+              </h3>
+            </div>
+          </div>
+          <div class="flex-none p-1" aria-label="Tiempo restante">
+            <app-timer [total]="timerTotal" [remaining]="timer" size="sm"></app-timer>
+          </div>
+        </div>
+        <div class="mb-6 flex flex-wrap items-center justify-center gap-2" role="status" aria-live="polite">
+          <span class="rounded-full border px-3 py-1.5 text-[0.65rem] font-black uppercase tracking-widest"
+                [ngClass]="isReboundTurn ? 'border-pink-400/60 bg-pink-500/20 text-white shadow-[0_0_18px_rgba(236,72,153,0.25)]' : 'border-white/15 bg-white/5 text-white/70'">
+            {{ isReboundTurn ? '⚡ Rebote activo' : 'Responde ahora' }} · {{ answeringPlayerName }}
+          </span>
+          @if (reboundQueue.length > 0) {
+            <span
+              class="rounded-full border border-purple-400/30 bg-purple-500/10 px-3 py-1.5 text-[0.65rem] font-black uppercase tracking-widest text-purple-200"
+              >Cola de rebotes</span>
+            @for (playerName of reboundQueue; track playerName; let index = $index) {
+              <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80">
+                {{ index + 1 }}. {{ playerName }}
+              </span>
+            }
+          }
+        </div>
+        @if (canBezzerwizzer) {
+          <button
+            type="button"
+            (click)="onBezzerwizzer.emit()"
+            class="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-purple-400/40 bg-purple-500/10 px-4 py-2 text-xs font-black tracking-widest text-purple-200 transition hover:border-purple-300 hover:bg-purple-500/20"
+          >
+            <span aria-hidden="true">✦</span> BEZZER · REBOTE +1
+          </button>
+        }
+        <!-- Question Text -->
+        <div class="text-center mb-8 px-1 md:px-8">
+          <h2
+            class="text-2xl sm:text-3xl md:text-4xl font-display font-black leading-tight drop-shadow-md text-white tracking-wide"
+          >
+            {{ question.questionText }}
+          </h2>
+        </div>
+        <!-- Answer Section -->
+        <div class="mt-auto">
+          <!-- Multiple Choice Options -->
+          @if (question.questionType === 'MULTIPLE_CHOICE') {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+              @for (option of question.options; track option; let i = $index) {
+                <button
+                  (click)="selectOption(getLetter(i))"
+                  [disabled]="isAnswered || selectionFailed"
+                  class="relative p-4 sm:p-5 rounded-2xl text-left transition-all duration-300 group overflow-hidden border-2 cursor-pointer"
+                  [ngClass]="getOptionClass(getLetter(i))"
+                >
+                  <div class="relative z-10 flex items-center gap-5">
+                    <div
+                      class="w-11 h-11 rounded-xl flex items-center justify-center font-black text-lg shadow-inner transition-colors"
+                      [ngClass]="getLetterClass(getLetter(i))"
+                    >
+                      {{ getLetter(i) }}
+                    </div>
+                    <span
+                      class="text-base sm:text-lg md:text-xl font-bold tracking-wide leading-snug"
+                      >{{ option }}</span
+                    >
+                  </div>
+                </button>
+              }
+            </div>
+          }
+          <!-- Free Text Entry -->
+          @if (question.questionType === 'FREE_TEXT') {
+            <div class="flex flex-col items-center max-w-2xl mx-auto w-full gap-6">
+              <div class="relative w-full">
+                <input
+                  type="text"
+                  [(ngModel)]="freeTextValue"
+                  [disabled]="isAnswered || selectionFailed"
+                  (keyup.enter)="submitFreeText()"
+                  placeholder="Escribe tu respuesta aquí..."
+                  class="input-glass w-full text-center text-3xl p-6 font-bold"
+                />
+              </div>
+              <button
+                (click)="submitFreeText()"
+                [disabled]="isAnswered || selectionFailed || !freeTextValue.trim()"
+                class="btn-primary w-full max-w-xs text-xl font-bold py-5 rounded-2xl shadow-lg"
+              >
+                ENVIAR RESPUESTA
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}

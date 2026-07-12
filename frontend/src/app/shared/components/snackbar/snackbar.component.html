@@ -1,0 +1,49 @@
+<section
+  class="snackbar-region"
+  aria-label="Notificaciones"
+  aria-live="polite"
+  aria-relevant="additions removals"
+>
+  @for (msg of snackbarService.messages(); track msg.id) {
+    <article
+      class="snackbar snackbar--{{ msg.type }}"
+      [attr.role]="msg.type === 'error' ? 'alert' : 'status'"
+      [attr.aria-label]="typeLabel(msg.type) + ': ' + msg.message"
+    >
+      <div class="snackbar__accent" aria-hidden="true"></div>
+
+      <div class="snackbar__icon" aria-hidden="true">
+        @switch (msg.type) {
+          @case ('success') {
+            <svg viewBox="0 0 24 24"><path d="m5 12.5 4.2 4L19 7" /></svg>
+          }
+          @case ('warning') {
+            <svg viewBox="0 0 24 24"><path d="M12 4 3.5 19h17L12 4Z" /><path d="M12 9v4.5M12 17h.01" /></svg>
+          }
+          @case ('error') {
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="m9 9 6 6m0-6-6 6" /></svg>
+          }
+          @default {
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5M12 8h.01" /></svg>
+          }
+        }
+      </div>
+
+      <div class="snackbar__content">
+        <span class="snackbar__eyebrow">{{ typeLabel(msg.type) }}</span>
+        <p class="snackbar__message">{{ msg.message }}</p>
+      </div>
+
+      <button
+        type="button"
+        class="snackbar__close"
+        (click)="snackbarService.remove(msg.id)"
+        [attr.aria-label]="'Cerrar notificación: ' + msg.message"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m7 7 10 10M17 7 7 17" />
+        </svg>
+      </button>
+    </article>
+  }
+</section>

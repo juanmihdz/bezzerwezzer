@@ -1,0 +1,21 @@
+server:
+  port: 8080
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bezzerwizzer
+    username: bezzer
+    password: bezzer_dev_2026
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  threads:
+    virtual:
+      enabled: true
+jwt:
+  secret: ${JWT_SECRET:bezzerwizzer-dev-secret-change-in-prod-2026}
+  expiration: 86400000

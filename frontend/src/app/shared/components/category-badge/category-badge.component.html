@@ -1,0 +1,61 @@
+@if (compact) {
+  <div
+    class="category-icon"
+    [class.category-icon--lg]="compactSize === 'lg'"
+    [style.backgroundColor]="color"
+    [attr.title]="name"
+    [attr.aria-label]="name"
+    role="img"
+  >
+    <svg class="category-svg" viewBox="0 0 24 24" aria-hidden="true">
+      <path [attr.d]="iconPath"></path>
+    </svg>
+  </div>
+} @else {
+  <div
+    class="relative flex items-center gap-3 rounded-2xl glass transition-all duration-300 group overflow-hidden"
+    [ngClass]="[
+      sizeClasses[size],
+      isHighlighted ? 'shadow-2xl z-10 ring-1 ring-white/25' : 'hover:scale-[1.02]',
+    ]"
+    [style.borderColor]="color + '40'"
+  >
+    <!-- Background Tint -->
+    <div
+      class="absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20"
+      [style.backgroundColor]="color"
+    ></div>
+    <!-- Icon Container -->
+    <div
+      class="flex items-center justify-center rounded-xl shadow-inner relative z-10"
+      [ngClass]="iconSizeClasses[size]"
+      [style.backgroundColor]="color"
+      [style.boxShadow]="isHighlighted ? '0 0 15px ' + color + '80' : 'none'"
+    >
+      <svg class="category-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path [attr.d]="iconPath"></path>
+      </svg>
+    </div>
+    <!-- Category Name -->
+    <span
+      class="font-display font-semibold tracking-wide relative z-10 truncate pr-2"
+      [ngClass]="textSizeClasses[size]"
+      [style.color]="isHighlighted ? 'white' : 'var(--color-text)'"
+    >
+      {{ name }}
+    </span>
+    <!-- Point Value Badge (if assigned) -->
+    @if (pointValue !== undefined && pointValue > 0) {
+      <div
+        class="absolute top-0 right-0 h-full flex items-center justify-center bg-black/40 backdrop-blur-md border-l border-white/10 px-4 shadow-xl z-20"
+      >
+        <div class="flex flex-col items-center">
+          <span class="text-xs font-bold text-white/70 uppercase tracking-widest mb-0.5">PTS</span>
+          <span class="text-2xl font-black text-white" [style.textShadow]="'0 0 10px ' + color">{{
+            pointValue
+          }}</span>
+        </div>
+      </div>
+    }
+  </div>
+}

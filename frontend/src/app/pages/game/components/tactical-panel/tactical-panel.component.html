@@ -1,0 +1,130 @@
+<div class="glass p-4 xl:p-5 rounded-3xl animate-slide-up h-full flex flex-col delay-200">
+  <div class="flex items-center justify-between gap-2 mb-3">
+    <h3 class="text-xl font-black tracking-wide text-white">Fichas Tácticas</h3>
+    @if (canSkipPreparation || skipVotes > 0) {
+      <button
+        type="button"
+        (click)="skipPreparationClick.emit()"
+        [disabled]="!canSkipPreparation"
+        class="skip-preparation-button"
+        [attr.aria-label]="
+          'Pasar ventana táctica: ' + skipVotes + ' de ' + playerCount + ' jugadores'
+        "
+      >
+        Paso ({{ skipVotes }}/{{ playerCount }})
+      </button>
+    }
+  </div>
+
+  <div class="flex gap-3 flex-grow">
+    <!-- ZWAP Tile -->
+    <button
+      (click)="zwapClick.emit()"
+      [disabled]="!canZwap"
+      class="flex-1 flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 group relative overflow-hidden"
+      [ngClass]="
+        canZwap
+          ? 'bg-orange-500/5 border-orange-500/40 hover:border-orange-500/80 hover:bg-orange-500/10 hover:shadow-[0_0_25px_rgba(249,115,22,0.25)] hover:-translate-y-1 cursor-pointer'
+          : 'bg-black/10 border-white/5 opacity-40 grayscale cursor-not-allowed'
+      "
+    >
+      <!-- Active glow filter -->
+      @if (canZwap) {
+        <div
+          class="absolute inset-0 bg-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+        ></div>
+      }
+
+      <!-- Icon Box -->
+      <div
+        class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg relative z-10 mb-2 transition-transform duration-300 group-hover:scale-105"
+        [ngClass]="{ 'shadow-[0_0_20px_rgba(249,115,22,0.5)] animate-pulse': canZwap }"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          class="h-7 w-7 text-white"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          aria-hidden="true"
+        >
+          <path d="M7 7h10v10" />
+          <path d="m17 7-4 4M17 17H7V7" />
+          <path d="m7 17 4-4" />
+        </svg>
+      </div>
+
+      <span
+        class="font-display font-black text-sm tracking-[0.15em] relative z-10 uppercase"
+        [ngClass]="canZwap ? 'text-orange-400' : 'text-text-muted/60'"
+        >ZWAP</span
+      >
+
+      <!-- Floating Count Indicator -->
+      <div
+        class="absolute z-20 top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border transition-all"
+        [ngClass]="
+          zwapsLeft > 0
+            ? 'bg-orange-500 text-white border-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.4)]'
+            : 'bg-black/40 text-gray-500 border-white/5'
+        "
+      >
+        {{ zwapsLeft }}
+      </div>
+    </button>
+
+    <!-- BEZZERWIZZER Tile -->
+    <button
+      (click)="bezzerwizzerClick.emit()"
+      [disabled]="!canBezzerwizzer"
+      class="flex-1 flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 group relative overflow-hidden"
+      [ngClass]="
+        canBezzerwizzer
+          ? 'bg-purple-500/5 border-purple-500/40 hover:border-purple-500/80 hover:bg-purple-500/10 hover:shadow-[0_0_25px_rgba(168,85,247,0.25)] hover:-translate-y-1 cursor-pointer'
+          : 'bg-black/10 border-white/5 opacity-40 grayscale cursor-not-allowed'
+      "
+    >
+      <!-- Active glow filter -->
+      @if (canBezzerwizzer) {
+        <div
+          class="absolute inset-0 bg-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+        ></div>
+      }
+
+      <!-- Icon Box -->
+      <div
+        class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-lg relative z-10 mb-2 transition-transform duration-300 group-hover:scale-105"
+        [ngClass]="{ 'shadow-[0_0_20px_rgba(168,85,247,0.5)] animate-pulse': canBezzerwizzer }"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          class="h-7 w-7 text-white"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path d="m12 3 2.4 5.2L20 9l-4 4 .9 5.7L12 16l-4.9 2.7L8 13 4 9l5.6-.8L12 3Z" />
+        </svg>
+      </div>
+
+      <span
+        class="font-display font-black text-sm tracking-[0.15em] relative z-10 uppercase"
+        [ngClass]="canBezzerwizzer ? 'text-purple-400' : 'text-text-muted/60'"
+        >BEZZER</span
+      >
+
+      <!-- Floating Count Indicator -->
+      <div
+        class="absolute z-20 top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border transition-all"
+        [ngClass]="
+          bezzerwizzersLeft > 0
+            ? 'bg-purple-500 text-white border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.4)]'
+            : 'bg-black/40 text-gray-500 border-white/5'
+        "
+      >
+        {{ bezzerwizzersLeft }}
+      </div>
+    </button>
+  </div>
+</div>

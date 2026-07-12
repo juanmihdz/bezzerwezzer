@@ -1,0 +1,298 @@
+<div
+  class="game-shell flex flex-col min-h-[calc(100dvh-1.5rem)] sm:min-h-[calc(100dvh-2.5rem)] lg:h-[calc(100dvh-3rem)] lg:min-h-0 lg:max-h-[980px] p-1 sm:p-2 gap-3 lg:gap-4 w-full max-w-[1500px] mx-auto"
+>
+  <!-- Top Bar: Turn Indicator & Round -->
+  <header
+    class="game-header flex-none flex justify-center items-center relative z-20 lg:absolute lg:top-0 lg:left-1/2 lg:-translate-x-1/2 lg:w-max"
+  >
+    <app-turn-indicator
+      [playerName]="currentTurnPlayerName"
+      [playerColor]="currentTurnPlayerColor"
+      [isMyTurn]="gameState.isMyTurn()"
+      [phaseText]="phaseText"
+    >
+    </app-turn-indicator>
+  </header>
+  <div class="game-help"><app-rules-help [compact]="true"></app-rules-help></div>
+
+  @if (hasReboundStatus) {
+    <div class="rebound-queue" role="status" aria-live="polite">
+      <span class="rebound-queue__label">{{ isReboundTurn ? 'Rebote activo' : 'Cola de rebotes' }}</span>
+      @if (isReboundTurn) {
+        <span class="rebound-queue__player rebound-queue__player--active">Responde: {{ currentAnswerPlayerName }}</span>
+      }
+      @for (playerName of reboundQueueNames; track playerName; let index = $index) {
+        <span class="rebound-queue__player">{{ isReboundTurn ? 'Después: ' : (index + 1) + '. ' }}{{ playerName }}</span>
+      }
+    </div>
+  }
+
+  <!-- Main Game Area -->
+  <main
+    class="flex-grow grid grid-cols-1 lg:grid-cols-[minmax(210px,260px)_minmax(440px,1fr)_minmax(250px,300px)] gap-3 lg:gap-4 min-h-0 relative z-10"
+  >
+    <!-- Left Sidebar: Scoreboard (Hidden on small mobile, bottom on tablet, left on desktop) -->
+    <aside class="score-area flex lg:flex-col w-full h-auto lg:h-full order-2 lg:order-1 min-h-0">
+      <app-scoreboard
+        [players]="gameState.sortedPlayers()"
+        [currentTurnPlayerId]="gameState.currentTurnPlayerId()"
+        [currentRound]="gameState.currentRound()"
+      >
+      </app-scoreboard>
+    </aside>
+
+    <!-- Center: Board -->
+    <section
+      class="board-area flex items-center justify-center min-h-[320px] lg:min-h-0 order-1 lg:order-2 p-1 lg:pt-16"
+    >
+      <app-board
+        [players]="gameState.players()"
+        [currentTurnPlayerId]="gameState.currentTurnPlayerId()"
+      >
+      </app-board>
+
+      <!-- A short, skippable tactical beat before the question keeps ZWAP meaningful
+      without forcing the table to wait for the whole countdown. -->
+      @if (gameState.gamePhase() === 'PLAYING') {
+        <div class="turn-prep-card glass-strong">
+          <span class="turn-prep-kicker">Siguiente pregunta en {{ gameState.timer() }} s</span>
+          @if (currentTurnCategory; as category) {
+            <div class="turn-prep-category">
+              <app-category-badge
+                class="turn-prep-icon"
+                [name]="category.category.name"
+                [icon]="category.category.icon"
+                [color]="category.category.color"
+                [compact]="true"
+              >
+              </app-category-badge>
+              <div>
+                <strong>{{ currentTurnPlayerName }}</strong>
+                <span>{{ category.category.name }} · {{ category.pointValue }} puntos</span>
+              </div>
+            </div>
+          }
+          <p>Todos deben confirmar antes de mostrar la pregunta. Mientras tanto puedes usar tus fichas.</p>
+          @if (reboundQueueNames.length > 0) {
+            <div class="turn-prep-queue" role="status">
+              <span>Cola BEZZER</span>
+              @for (playerName of reboundQueueNames; track playerName; let index = $index) {
+                <b>{{ index + 1 }}. {{ playerName }}</b>
+              }
+            </div>
+          }
+          <button type="button" class="turn-prep-button" (click)="skipPreparation()" [disabled]="!canSkipPreparation">
+              <span>Listo ({{ gameState.preparationSkipVotes().length }}/{{ gameState.players().length }})</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+          </button>
+        </div>
+      }
+    </section>
+
+    <!-- Right Sidebar: Personal Dashboard -->
+    <aside class="dashboard-area w-full flex flex-col gap-3 h-auto lg:h-full order-3 min-h-0">
+      <div class="flex-grow min-h-0">
+        <app-category-slots
+          [slots]="gameState.myCategories()"
+          [isAssigning]="isAssigningCategories"
+          [currentSlotIndex]="currentSlotIndex"
+          (assignmentChanged)="onAssignmentChanged($event)"
+          (submitAssignment)="submitAssignment()"
+        >
+        </app-category-slots>
+      </div>
+
+      @if (gameState.gamePhase() !== 'CATEGORY_ASSIGNMENT') {
+        <details class="opponents-categories glass">
+          <summary>Ver categorías de los demás</summary>
+          @for (player of gameState.players(); track player) {
+            @if (player.playerId !== playerId()) {
+              <div class="opponent-category-row">
+                <strong [style.color]="player.color">{{ player.username }}</strong>
+                @for (slot of orderedCategories(player.categorySlots); track slot) {
+                  <span
+                    class="opponent-category-icon"
+                    [class.is-played]="slot.answered"
+                    [attr.title]="slot.category.name + (slot.answered ? ' (ya jugada)' : '')"
+                    tabindex="0"
+                    [attr.aria-label]="
+                      slot.category.name +
+                      ', ' +
+                      slot.pointValue +
+                      ' puntos' +
+                      (slot.answered ? ', ya jugada' : '')
+                    "
+                  >
+                    <app-category-badge
+                      [name]="slot.category.name"
+                      [icon]="slot.category.icon"
+                      [color]="slot.category.color"
+                      [compact]="true"
+                    >
+                    </app-category-badge>
+                    <span class="opponent-category-tooltip" role="tooltip">{{
+                      slot.category.name
+                    }}</span>
+                  </span>
+                }
+              </div>
+            }
+          }
+        </details>
+      }
+
+      <div class="flex-none min-h-40 lg:h-[13rem]">
+        <app-tactical-panel
+          [zwapsLeft]="gameState.myTacticalTiles().zwap"
+          [bezzerwizzersLeft]="gameState.myTacticalTiles().bezzerwizzer"
+          [canZwap]="gameState.canPlayZwap()"
+          [canBezzerwizzer]="canChallengeWithBezzerwizzer"
+          [canSkipPreparation]="canSkipPreparation"
+          [skipVotes]="gameState.preparationSkipVotes().length"
+          [playerCount]="gameState.players().length"
+          (zwapClick)="onZwapClick()"
+          (bezzerwizzerClick)="onBezzerwizzerClick()"
+          (skipPreparationClick)="skipPreparation()"
+        >
+        </app-tactical-panel>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Overlays -->
+  @if (showQuestionModal) {
+    <app-question-modal
+      [question]="gameState.currentQuestion()"
+      [timer]="gameState.timer()"
+      [timerTotal]="gameState.timerTotal()"
+      [isAnswered]="!canAnswerQuestion"
+      [canChangeAnswer]="canChangePreparedAnswer"
+      [selectionFailed]="isMySelectionIncorrect"
+      [canBezzerwizzer]="canChallengeWithBezzerwizzer"
+      [answeringPlayerName]="currentAnswerPlayerName"
+      [isReboundTurn]="isReboundTurn"
+      [reboundQueue]="reboundQueueNames"
+      (onAnswer)="handleAnswer($event)"
+      (onBezzerwizzer)="onBezzerwizzerClick()"
+    >
+    </app-question-modal>
+  }
+
+  @if (showZwapSelector) {
+    <div class="zwap-overlay" role="presentation">
+      <section class="zwap-dialog glass-strong" role="dialog" aria-modal="true" aria-labelledby="zwap-title">
+        <header class="zwap-dialog__header">
+          <div>
+            <span class="zwap-dialog__eyebrow">Ficha táctica</span>
+            <h2 id="zwap-title">Usar ZWAP</h2>
+          </div>
+          <button type="button" class="zwap-close" (click)="showZwapSelector = false" aria-label="Cerrar selector ZWAP">×</button>
+        </header>
+
+        @if (getMyPlayer(); as me) {
+          <div class="zwap-dialog__content">
+            <section>
+              <h3>1. Elige una de tus categorías</h3>
+              <div class="zwap-categories">
+                @for (item of availableZwapSlots(me); track item.index) {
+                  <button type="button" class="zwap-category-choice" [class.is-selected]="zwapSourceIndex === item.index" (click)="selectZwapSource(item.index)">
+                    <app-category-badge [name]="item.slot.category.name" [icon]="item.slot.category.icon" [color]="item.slot.category.color" [compact]="true"></app-category-badge>
+                    <span>{{ item.slot.pointValue }} pts</span>
+                  </button>
+                }
+              </div>
+            </section>
+
+            @if (zwapSourceIndex !== null) {
+              <section>
+                <h3>2. Elige el jugador destino</h3>
+                <div class="zwap-players">
+                  @for (player of gameState.players(); track player.playerId) {
+                    <button type="button" class="zwap-player-choice" [class.is-selected]="zwapTargetPlayerId === player.playerId" [disabled]="availableZwapSlots(player).length === 0" (click)="selectZwapTargetPlayer(player.playerId)">
+                      <span class="zwap-player-dot" [style.backgroundColor]="player.color"></span>
+                      {{ player.playerId === playerId() ? 'Reordenar mis categorías' : player.username }}
+                    </button>
+                  }
+                </div>
+              </section>
+            }
+
+            @if (getZwapTargetPlayer(); as target) {
+              <section>
+                <h3>3. Elige la categoría destino</h3>
+                <div class="zwap-categories">
+                  @for (item of availableZwapSlots(target); track item.index) {
+                    <button type="button" class="zwap-category-choice" [class.is-selected]="zwapTargetSlotIndex === item.index" [disabled]="target.playerId === playerId() && item.index === zwapSourceIndex" (click)="zwapTargetSlotIndex = item.index">
+                      <app-category-badge [name]="item.slot.category.name" [icon]="item.slot.category.icon" [color]="item.slot.category.color" [compact]="true"></app-category-badge>
+                      <span>{{ item.slot.pointValue }} pts</span>
+                    </button>
+                  }
+                </div>
+              </section>
+            }
+          </div>
+        }
+
+        <footer class="zwap-dialog__actions">
+          <button type="button" class="zwap-cancel" (click)="showZwapSelector = false">Cancelar</button>
+          <button type="button" class="btn-primary zwap-confirm" (click)="confirmZwap()" [disabled]="zwapSourceIndex === null || !zwapTargetPlayerId || zwapTargetSlotIndex === null">Confirmar intercambio</button>
+        </footer>
+      </section>
+    </div>
+  }
+
+  <!-- Result Overlay (Answer Correct/Incorrect) -->
+  @if (showResultOverlay) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"
+    >
+      <div
+        class="glass p-12 rounded-[3rem] flex flex-col items-center animate-bounce-in max-w-md w-full text-center"
+        [ngClass]="
+          lastResultCorrect
+            ? 'border-correct/50 glow-correct'
+            : 'border-incorrect/50 glow-incorrect'
+        "
+      >
+        <div
+          class="result-icon w-28 h-28 rounded-full flex items-center justify-center mb-6 shadow-2xl"
+          [ngClass]="lastResultCorrect ? 'bg-correct text-white' : 'bg-incorrect text-white'"
+        >
+          @if (lastResultCorrect) {
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.2 4L19 7" /></svg>
+          } @else {
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" /></svg>
+          }
+        </div>
+        <h2 class="text-4xl font-black font-display mb-2 text-white">
+          {{ lastResultCorrect ? '¡CORRECTO!' : 'INCORRECTO' }}
+        </h2>
+        <p class="text-xl text-text-muted font-medium mb-6">
+          {{
+            lastResultCorrect
+              ? '+' + lastResultPoints + ' puntos'
+              : 'La respuesta era: ' + lastResultAnswerText
+          }}
+        </p>
+        <!-- Bezzerwizzer Results if any -->
+        @if (bezzerwizzerResults.length > 0) {
+          <div
+            class="w-full bg-surface-elevated/50 p-4 rounded-2xl mb-4 text-left border border-border/50"
+          >
+            <h4 class="text-sm font-bold text-purple-400 mb-2 uppercase tracking-widest">
+              Resultados Bezzerwizzer
+            </h4>
+            @for (bz of bezzerwizzerResults; track bz) {
+              <div class="flex items-center gap-2 text-sm text-white font-medium">
+                <span>{{ getPlayerName(bz.challengerId) }}:</span>
+                <span [ngClass]="bz.correct ? 'text-correct' : 'text-incorrect'">
+                  {{ bz.correct ? '+' + bz.pointsGained : bz.pointsGained }} pts
+                </span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

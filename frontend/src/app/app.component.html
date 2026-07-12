@@ -1,0 +1,13 @@
+<main class="min-h-[100dvh] relative overflow-x-hidden">
+  <!-- Background decorative elements -->
+  <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-[-1]">
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px] animate-pulse-glow"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[100px] animate-pulse-glow" style="animation-delay: 2s;"></div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="mx-auto w-full max-w-[1600px] px-3 py-3 sm:px-5 sm:py-5 lg:px-8 lg:py-6 relative z-10 min-h-[100dvh] flex flex-col">
+    <router-outlet></router-outlet>
+  </div>
+  <app-snackbar></app-snackbar>
+</main>

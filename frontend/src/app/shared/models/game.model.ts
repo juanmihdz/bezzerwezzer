@@ -1,0 +1,104 @@
+export type GamePhase = 'HOME' | 'LOBBY' | 'CATEGORY_ASSIGNMENT' | 'PLAYING' | 'BEZZERWIZZER_WINDOW' | 'ANSWERING' | 'TURN_RESULT' | 'ROUND_END' | 'GAME_OVER';
+
+export interface GameEvent {
+  type: string;
+  payload: unknown;
+  timestamp: number;
+}
+
+export interface GameStatePayload {
+  roomCode: string;
+  phase: GamePhase;
+  players: PlayerStatePayload[] | Record<string, PlayerStatePayload>;
+  currentTurnPlayerId?: string | null;
+  currentAnswerPlayerId?: string | null;
+  reboundQueue?: string[];
+  bezzerwizzerPlayers?: string[];
+  bezzerwizzerAnswered?: string[];
+  round: number;
+  timer?: number;
+  preparationSkipVotes?: string[];
+}
+
+export interface PlayerStatePayload extends PlayerInfo {
+  categorySlots?: CategorySlot[];
+  zwapsRemaining?: number;
+  bezzerwizzersRemaining?: number;
+}
+
+export interface TurnStartPayload {
+  playerId: string;
+  question: import('./player.model').Question;
+  timeLimit?: number;
+}
+
+export interface PlayerEventPayload {
+  playerId: string;
+  timeLimit?: number;
+}
+
+export interface AnswerResult {
+  playerId: string;
+  correct: boolean;
+  points: number;
+  correctAnswer: string;
+  bezzerwizzerResults?: BezzerwizzerResult[];
+}
+
+export interface BezzerwizzerResult {
+  challengerId?: string;
+  playerId?: string;
+  correct: boolean;
+  pointsGained?: number;
+  points?: number;
+}
+
+export interface ZwapAction {
+  targetPlayerId: string;
+  mySlotIndex: number;
+  targetSlotIndex: number;
+}
+
+export interface CategorySlot {
+  category: Category;
+  pointValue: number;
+  answered: boolean;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  icon: string;
+  color: string;
+}
+
+export interface TacticalTiles {
+  zwap: number;
+  bezzerwizzer: number;
+}
+
+export interface RoomInfo {
+  roomCode: string;
+  roomId: string;
+  players: PlayerInfo[];
+  hostPlayerId: string;
+  phase: string;
+}
+
+export interface PlayerInfo {
+  playerId: string;
+  username: string;
+  color: string;
+  boardPosition: number;
+  ready: boolean;
+  roundScore?: number;
+  categorySlots?: CategorySlot[];
+}
+
+export interface TurnInfo {
+  playerId: string;
+  categoryName: string;
+  categoryIcon: string;
+  categoryColor: string;
+  pointValue: number;
+}

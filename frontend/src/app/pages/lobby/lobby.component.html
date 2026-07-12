@@ -1,0 +1,105 @@
+<section class="lobby-shell">
+  <header class="lobby-header">
+    <div class="lobby-help"><app-rules-help></app-rules-help></div>
+    <div>
+      <span class="lobby-kicker">Preparando partida</span>
+      <h1>Sala de espera</h1>
+    </div>
+
+    <button type="button" class="room-code" (click)="copyCode()" title="Copiar código de sala">
+      <span class="room-code__label">Código de sala</span>
+      <strong>{{ roomCode() }}</strong>
+      <span class="room-code__copy" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+      </span>
+    </button>
+
+    <p class="lobby-subtitle">Comparte el código y espera a que cada jugador confirme que está listo.</p>
+  </header>
+
+  <div class="lobby-progress" aria-live="polite">
+    <div>
+      <span>Jugadores preparados</span>
+      <strong>{{ readyPlayers() }}/{{ players().length }}</strong>
+    </div>
+    <div class="lobby-progress__track" aria-hidden="true">
+      <span [style.width.%]="players().length ? (readyPlayers() / players().length) * 100 : 0"></span>
+    </div>
+  </div>
+
+  <div class="players-grid">
+    @for (player of players(); track player.playerId; let i = $index) {
+      <article class="player-card animate-slide-up" [class.player-card--ready]="player.ready" [style.animation-delay]="(i * 80) + 'ms'">
+        <app-player-avatar
+          [username]="player.username"
+          [color]="player.color"
+          size="lg"
+          [showName]="false"
+          [showCrown]="false"
+          [isActive]="player.ready">
+        </app-player-avatar>
+
+        <div class="player-card__body">
+          <div class="player-card__name">
+            <h2>{{ player.username }}</h2>
+            @if (player.playerId === hostId()) {
+              <span class="host-badge">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 7 4.5 4L12 4l4.5 7L21 7l-1.5 10h-15L3 7Z"/></svg>
+                Anfitrión
+              </span>
+            }
+          </div>
+          <div class="player-status" [class.player-status--ready]="player.ready">
+            <span></span>{{ player.ready ? 'Listo para jugar' : 'Preparándose' }}
+          </div>
+        </div>
+
+        @if (player.playerId === myId()) {
+          <button
+            type="button"
+            class="ready-button"
+            [class.ready-button--active]="player.ready"
+            (click)="setReady(!player.ready)"
+            [attr.aria-pressed]="player.ready"
+            [attr.aria-label]="player.ready ? 'Marcar como no listo' : 'Marcar como listo'">
+            @if (player.ready) {
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+              <span>No listo</span>
+            } @else {
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.2 4L19 7"/></svg>
+              <span>Estoy listo</span>
+            }
+          </button>
+        }
+      </article>
+    }
+
+    @for (slot of emptySlots(); track $index) {
+      <article class="player-card player-card--empty">
+        <div class="empty-avatar">?</div>
+        <div class="player-card__body">
+          <h2>Plaza disponible</h2>
+          <p>Esperando jugador…</p>
+        </div>
+      </article>
+    }
+  </div>
+
+  <footer class="lobby-actions animate-slide-up">
+    @if (isHost()) {
+      <button type="button" class="btn-primary start-button" (click)="startGame()" [disabled]="!canStartGame()">
+        @if (canStartGame()) {
+          <span>Comenzar partida</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        } @else {
+          <span>Esperando a todos · {{ readyPlayers() }}/{{ players().length }}</span>
+        }
+      </button>
+    } @else {
+      <div class="host-waiting">
+        <span class="host-waiting__spinner"></span>
+        El anfitrión comenzará cuando todos estén listos
+      </div>
+    }
+  </footer>
+</section>
