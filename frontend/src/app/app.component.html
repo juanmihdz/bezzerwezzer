@@ -1,15 +1,22 @@
 <main class="app-universe min-h-[100dvh] relative overflow-x-hidden">
   <!-- Decorative layers only: game state and interaction stay inside routed components. -->
   <div class="cosmic-atmosphere" aria-hidden="true">
+    <div class="cosmic-void"></div>
     <div class="cosmic-nebula cosmic-nebula--violet"></div>
     <div class="cosmic-nebula cosmic-nebula--cyan"></div>
+    <div class="cosmic-nebula cosmic-nebula--magenta"></div>
     <div class="cosmic-energy-ribbon"></div>
+    <div class="cosmic-lattice"></div>
     <div class="cosmic-stars cosmic-stars--far"></div>
     <div class="cosmic-stars cosmic-stars--near"></div>
+    <div class="cosmic-dust cosmic-dust--one"></div>
+    <div class="cosmic-dust cosmic-dust--two"></div>
+    <div class="cosmic-flare cosmic-flare--left"></div>
+    <div class="cosmic-flare cosmic-flare--right"></div>
   </div>
 
   <!-- Main Content -->
-  <div class="mx-auto w-full max-w-[1600px] px-3 py-3 sm:px-5 sm:py-5 lg:px-8 lg:py-6 relative z-10 min-h-[100dvh] flex flex-col">
+  <div class="mx-auto w-full max-w-[115rem] px-3 py-3 sm:px-5 sm:py-5 lg:px-8 lg:py-6 relative z-10 min-h-[100dvh] flex flex-col">
     <router-outlet></router-outlet>
   </div>
   <app-snackbar></app-snackbar>

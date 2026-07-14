@@ -17,29 +17,22 @@
   </h3>
 
   <div class="flex flex-col gap-2.5 flex-grow overflow-y-auto pr-1 custom-scrollbar min-h-0">
-    @for (player of players; track player; let i = $index) {
+    @for (player of players; track player.playerId; let i = $index) {
       <div
         class="flex items-center p-3 rounded-2xl border transition-all duration-300 relative overflow-hidden"
         [ngClass]="
           player.playerId === currentTurnPlayerId
-            ? 'bg-gradient-to-r from-primary/15 to-accent/5 border-primary/40 shadow-lg shadow-primary/5 transform scale-[1.02] z-10'
+            ? 'bg-gradient-to-r from-primary/15 to-accent/5 border-primary/40 shadow-lg shadow-primary/5 z-10'
             : 'bg-black/20 border-white/5 hover:border-white/10 hover:bg-black/30'
         "
         [style.borderColor]="player.playerId === currentTurnPlayerId ? player.color + '50' : ''"
       >
-        <!-- Current Turn Glowing Effect in Player Color -->
-        @if (player.playerId === currentTurnPlayerId) {
-          <div
-            class="absolute inset-0 opacity-20 blur-md z-0 animate-pulse-glow"
-            [style.backgroundColor]="player.color"
-          ></div>
-        }
         <div class="relative z-10 flex items-center gap-4 w-full">
           <!-- Rank Indicator -->
           <div
             class="w-10 font-display font-black text-center text-xl flex items-center justify-center"
             [ngClass]="{
-              'text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.4)]': i === 0,
+              'text-yellow-400 drop-shadow-[0_0_0.625rem_rgba(250,204,21,0.4)]': i === 0,
               'text-gray-300': i === 1,
               'text-amber-600': i === 2,
               'text-text-muted/40': i > 2,
@@ -76,7 +69,7 @@
               class="font-black font-display text-2xl leading-none"
               [ngClass]="
                 player.playerId === currentTurnPlayerId
-                  ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]'
+                  ? 'text-white drop-shadow-[0_0_0.5rem_rgba(255,255,255,0.4)]'
                   : 'text-text-muted'
               "
             >
@@ -90,5 +83,20 @@
         </div>
       </div>
     }
+  </div>
+  <div class="score-art" aria-hidden="true">
+    <div class="score-art__sky"></div>
+    <div class="score-art__mountains score-art__mountains--back"></div>
+    <div class="score-art__mountains score-art__mountains--front"></div>
+    <div class="score-art__portal"><span></span></div>
+    <div class="score-art__monolith">
+      <div class="core-sigil" aria-hidden="true">
+        <svg viewBox="0 0 64 72">
+          <path class="core-sigil__frame" d="M32 2 59 18v36L32 70 5 54V18Z" />
+          <path class="core-sigil__mark" d="M22 17h15c9 0 14 4 14 11 0 5-3 8-7 10 6 1 9 5 9 10 0 9-7 13-18 13H22l9-9h5c5 0 7-2 7-5s-2-5-7-5h-8l8-8c4 0 6-2 6-5 0-2-2-4-6-4h-5Z" />
+        </svg>
+      </div>
+    </div>
+    <div class="score-art__beam"></div>
   </div>
 </div>

@@ -6,6 +6,7 @@ import com.bezzerwizzer.model.enums.QuestionType;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ScoringServiceTest {
     private final ScoringService service = new ScoringService(new AnswerValidator());
@@ -35,6 +36,37 @@ class ScoringServiceTest {
         assertEquals(GameRoom.BOARD_SIZE, player.getBoardPosition());
         service.movePlayer(player, -50);
         assertEquals(0, player.getBoardPosition());
+    }
+
+    @Test
+    void multipleChoiceAcceptsLetterOrVisibleOptionText() {
+        Question question = multipleChoiceQuestion();
+
+        assertTrue(service.isCorrect(question, "B"));
+        assertTrue(service.isCorrect(question, "Vincent van Gogh"));
+        assertEquals("Vincent van Gogh", service.correctAnswerText(question));
+        assertEquals("B", service.correctOptionKey(question));
+    }
+
+    @Test
+    void multipleChoiceSupportsLegacyCorrectAnswerColumn() {
+        Question question = multipleChoiceQuestion();
+        question.setCorrectOption(null);
+        question.setCorrectAnswer("Vincent van Gogh");
+
+        assertTrue(service.isCorrect(question, "B"));
+        assertEquals("Vincent van Gogh", service.correctAnswerText(question));
+    }
+
+    private Question multipleChoiceQuestion() {
+        Question question = new Question();
+        question.setQuestionType(QuestionType.MULTIPLE_CHOICE);
+        question.setOptionA("Claude Monet");
+        question.setOptionB("Vincent van Gogh");
+        question.setOptionC("Pablo Picasso");
+        question.setOptionD("Salvador Dalí");
+        question.setCorrectOption("B");
+        return question;
     }
 
     @Test

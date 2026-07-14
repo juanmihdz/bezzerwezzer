@@ -10,12 +10,15 @@ import java.util.Collections;
 public class TacticalTileService {
 
     public void processZwap(GameRoom room, String playerId, String targetPlayerId, int mySlotIndex, int targetSlotIndex) {
-        if (room.getPhase() != GamePhase.PLAYING) {
+        if (room.getPhase() != GamePhase.ZWAP) {
             throw new GameException("No se puede usar ZWAP en esta fase");
         }
         
         if (!playerId.equals(room.getCurrentTurnPlayerId())) {
             throw new GameException("Solo puedes usar ZWAP en tu turno");
+        }
+        if (!playerId.equals(room.getPendingZwapPlayerId())) {
+            throw new GameException("No tienes un ZWAP en curso");
         }
         
         if (targetPlayerId == null || targetPlayerId.isBlank()) {

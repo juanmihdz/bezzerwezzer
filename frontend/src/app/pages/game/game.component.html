@@ -1,5 +1,5 @@
 <div
-  class="game-shell flex flex-col min-h-[calc(100dvh-1.5rem)] sm:min-h-[calc(100dvh-2.5rem)] lg:h-[calc(100dvh-3rem)] lg:min-h-0 lg:max-h-[980px] p-1 sm:p-2 gap-3 lg:gap-4 w-full max-w-[1500px] mx-auto"
+  class="game-shell relative isolate flex w-full max-w-[93.75rem] flex-col gap-3 p-1 mx-auto min-h-[calc(100dvh-1.5rem)] sm:min-h-[calc(100dvh-2.5rem)] sm:p-2 lg:h-[calc(100dvh-3rem)] lg:min-h-0 lg:max-h-[61.25rem] lg:gap-4 min-[106.25rem]:max-w-[108.75rem]"
 >
   <!-- Top Bar: Turn Indicator & Round -->
   <header
@@ -13,8 +13,11 @@
     >
     </app-turn-indicator>
   </header>
-  <div class="game-help"><app-rules-help [compact]="true"></app-rules-help></div>
-
+  @if (gameState.tacticalAnnouncement(); as announcement) {
+    <div class="tactical-announcement" role="status" aria-live="assertive">
+      {{ announcement }}
+    </div>
+  }
   @if (hasReboundStatus) {
     <div class="rebound-queue" role="status" aria-live="polite">
       <span class="rebound-queue__label">{{ isReboundTurn ? 'Rebote activo' : 'Cola de rebotes' }}</span>
@@ -26,13 +29,21 @@
       }
     </div>
   }
+  @if (gameState.gamePhase() === 'ZWAP') {
+    <div class="rebound-queue" role="status" aria-live="polite">
+      <span class="rebound-queue__label">ZWAP</span>
+      <span class="rebound-queue__player rebound-queue__player--active">
+        {{ pendingZwapPlayerName }} está eligiendo un intercambio · {{ gameState.timer() }} s
+      </span>
+    </div>
+  }
 
   <!-- Main Game Area -->
   <main
-    class="flex-grow grid grid-cols-1 lg:grid-cols-[minmax(210px,260px)_minmax(440px,1fr)_minmax(250px,300px)] gap-3 lg:gap-4 min-h-0 relative z-10"
+    class="relative z-10 grid min-h-0 flex-grow grid-cols-1 gap-3 lg:grid-cols-[clamp(13rem,18vw,16.25rem)_minmax(0,1fr)_clamp(15.5rem,20vw,18.75rem)] lg:gap-4 min-[106.25rem]:grid-cols-[clamp(20rem,20vw,21.875rem)_minmax(0,1fr)_clamp(17.5rem,18vw,20rem)] min-[106.25rem]:gap-5"
   >
     <!-- Left Sidebar: Scoreboard (Hidden on small mobile, bottom on tablet, left on desktop) -->
-    <aside class="score-area flex lg:flex-col w-full h-auto lg:h-full order-2 lg:order-1 min-h-0">
+    <aside class="score-area order-2 flex h-auto min-h-0 min-w-0 w-full lg:order-1 lg:h-full lg:flex-col">
       <app-scoreboard
         [players]="gameState.sortedPlayers()"
         [currentTurnPlayerId]="gameState.currentTurnPlayerId()"
@@ -43,7 +54,7 @@
 
     <!-- Center: Board -->
     <section
-      class="board-area flex items-center justify-center min-h-[320px] lg:min-h-0 order-1 lg:order-2 p-1 lg:pt-16"
+      class="board-area relative order-1 flex w-full min-w-0 min-h-[20rem] items-center justify-center p-1 lg:order-2 lg:min-h-0 lg:pt-16 lg:pb-16"
     >
       <app-board
         [players]="gameState.players()"
@@ -90,7 +101,7 @@
     </section>
 
     <!-- Right Sidebar: Personal Dashboard -->
-    <aside class="dashboard-area w-full flex flex-col gap-3 h-auto lg:h-full order-3 min-h-0">
+    <aside class="dashboard-area order-3 flex h-auto min-h-0 min-w-0 w-full flex-col gap-3 lg:h-full">
       <div class="flex-grow min-h-0">
         <app-category-slots
           [slots]="gameState.myCategories()"
@@ -159,6 +170,38 @@
     </aside>
   </main>
 
+  <footer class="game-controls relative z-28 flex flex-none items-center justify-center gap-3 lg:absolute lg:right-0 lg:bottom-[.2rem] lg:left-0 lg:mx-auto lg:w-max" aria-label="Controles de la partida">
+    <app-rules-help [compact]="true"></app-rules-help>
+    <div class="volume-control" [class.is-muted]="audioService.muted()">
+      <button
+        type="button"
+        class="volume-button"
+        (click)="audioService.toggleMute()"
+        [attr.aria-label]="audioService.muted() ? 'Activar sonido' : 'Silenciar sonido'"
+        [attr.aria-pressed]="audioService.muted()"
+      >
+        @if (audioService.muted()) {
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6.5 9H3v6h3.5L11 19V5ZM16 9l5 6M21 9l-5 6" /></svg>
+        } @else {
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6.5 9H3v6h3.5L11 19V5ZM15 9.5a4 4 0 0 1 0 5M18 7a7 7 0 0 1 0 10" /></svg>
+        }
+        <span>Sonido</span>
+      </button>
+      <div class="volume-popover">
+        <span class="volume-popover__value">{{ audioService.volume() * 100 | number:'1.0-0' }}%</span>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
+          [value]="audioService.volume()"
+          (input)="setAudioVolume($event)"
+          aria-label="Volumen del juego"
+        />
+      </div>
+    </div>
+  </footer>
+
   <!-- Overlays -->
   @if (showQuestionModal) {
     <app-question-modal
@@ -185,8 +228,9 @@
           <div>
             <span class="zwap-dialog__eyebrow">Ficha táctica</span>
             <h2 id="zwap-title">Usar ZWAP</h2>
+            <p>Tiempo para intercambiar: {{ gameState.timer() }} s</p>
           </div>
-          <button type="button" class="zwap-close" (click)="showZwapSelector = false" aria-label="Cerrar selector ZWAP">×</button>
+          <button type="button" class="zwap-close" (click)="cancelZwap()" aria-label="Cerrar selector ZWAP">×</button>
         </header>
 
         @if (getMyPlayer(); as me) {
@@ -234,7 +278,7 @@
         }
 
         <footer class="zwap-dialog__actions">
-          <button type="button" class="zwap-cancel" (click)="showZwapSelector = false">Cancelar</button>
+          <button type="button" class="zwap-cancel" (click)="cancelZwap()">Cancelar</button>
           <button type="button" class="btn-primary zwap-confirm" (click)="confirmZwap()" [disabled]="zwapSourceIndex === null || !zwapTargetPlayerId || zwapTargetSlotIndex === null">Confirmar intercambio</button>
         </footer>
       </section>
@@ -264,16 +308,24 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" /></svg>
           }
         </div>
-        <h2 class="text-4xl font-black font-display mb-2 text-white">
+        <h2 class="text-4xl font-black font-display mb-4 text-white">
           {{ lastResultCorrect ? '¡CORRECTO!' : 'INCORRECTO' }}
         </h2>
-        <p class="text-xl text-text-muted font-medium mb-6">
-          {{
-            lastResultCorrect
-              ? '+' + lastResultPoints + ' puntos'
-              : 'La respuesta era: ' + lastResultAnswerText
-          }}
-        </p>
+
+        @if (lastResultCorrect) {
+          <p class="text-2xl font-bold text-correct mb-6">
+            +{{ lastResultPoints }} puntos
+          </p>
+        } @else {
+          <div class="w-full bg-incorrect/10 border-2 border-incorrect/40 rounded-2xl p-4 mb-6 text-left">
+            <p class="text-xs font-bold text-incorrect uppercase tracking-widest mb-2">
+              Respuesta correcta
+            </p>
+            <p class="text-lg font-bold text-white break-words">
+              {{ lastResultAnswerText }}
+            </p>
+          </div>
+        }
         <!-- Bezzerwizzer Results if any -->
         @if (bezzerwizzerResults.length > 0) {
           <div

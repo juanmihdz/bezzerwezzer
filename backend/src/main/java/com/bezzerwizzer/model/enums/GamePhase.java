@@ -4,6 +4,7 @@ public enum GamePhase {
     LOBBY,
     CATEGORY_ASSIGNMENT,
     PLAYING,
+    ZWAP,
     BEZZERWIZZER_WINDOW,
     ANSWERING,
     TURN_RESULT,

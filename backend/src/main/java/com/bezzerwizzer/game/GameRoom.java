@@ -43,6 +43,10 @@ public class GameRoom {
     // Players who have explicitly confirmed their category order this round.
     private Set<String> categoryAssignmentConfirmed = ConcurrentHashMap.newKeySet();
     private String pendingZwapPlayerId;
+    // Absolute deadline lets the preparation clock be paused safely for a ZWAP.
+    private long preparationDeadlineAt;
+    private long pausedPreparationMillis;
+    private long zwapDeadlineAt;
     private long turnStartTime;
     private long lastActivityAt = System.currentTimeMillis();
     private long finishedAt;

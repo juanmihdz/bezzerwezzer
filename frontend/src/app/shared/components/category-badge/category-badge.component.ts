@@ -45,14 +45,44 @@ export class CategoryBadgeComponent {
     tv: 'M4 6h16v12H4zM9 22h6M8 2l4 4 4-4',
   };
 
+  private readonly artIndexes: Record<string, number> = {
+    palette: 0,
+    building: 1,
+    flask: 2,
+    film: 3,
+    trophy: 4,
+    utensils: 5,
+    globe: 6,
+    landmark: 7,
+    languages: 8,
+    'book-open': 9,
+    calculator: 10,
+    music: 11,
+    leaf: 12,
+    briefcase: 13,
+    'landmark-dome': 14,
+    star: 15,
+    church: 16,
+    'heart-pulse': 17,
+    cpu: 18,
+    tv: 19,
+  };
+
   get iconPath(): string {
     return this.paths[this.icon] ?? 'M12 3v18M3 12h18';
   }
 
+  get categoryArtPosition(): string {
+    const index = this.artIndexes[this.icon] ?? 0;
+    const column = index % 2;
+    const row = Math.floor(index / 2);
+    return `${column * 100}% ${row * (100 / 9)}%`;
+  }
+
   sizeClasses = {
-    sm: 'p-1.5 pr-3 min-w-[140px]',
-    md: 'p-2 pr-4 min-w-[200px]',
-    lg: 'p-3 pr-6 min-w-[280px]',
+    sm: 'p-1.5 pr-3 min-w-[8.75rem]',
+    md: 'p-2 pr-4 min-w-[12.5rem]',
+    lg: 'p-3 pr-6 min-w-[17.5rem]',
   };
 
   iconSizeClasses = {

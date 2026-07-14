@@ -16,42 +16,44 @@ function CategoryBadgeComponent_Conditional_0_Template(rf, ctx) { if (rf & 1) {
     i0.ɵɵadvance(2);
     i0.ɵɵattribute("d", ctx_r0.iconPath);
 } }
-function CategoryBadgeComponent_Conditional_1_Conditional_7_Template(rf, ctx) { if (rf & 1) {
-    i0.ɵɵelementStart(0, "div", 8)(1, "div", 9)(2, "span", 10);
+function CategoryBadgeComponent_Conditional_1_Conditional_8_Template(rf, ctx) { if (rf & 1) {
+    i0.ɵɵelementStart(0, "div", 9)(1, "div", 10)(2, "span", 11);
     i0.ɵɵtext(3, "PTS");
     i0.ɵɵelementEnd();
-    i0.ɵɵelementStart(4, "span", 11);
+    i0.ɵɵelementStart(4, "span", 12);
     i0.ɵɵtext(5);
     i0.ɵɵelementEnd()()();
 } if (rf & 2) {
     const ctx_r0 = i0.ɵɵnextContext(2);
     i0.ɵɵadvance(4);
-    i0.ɵɵstyleProp("text-shadow", "0 0 10px " + ctx_r0.color);
+    i0.ɵɵstyleProp("text-shadow", "0 0 0.625rem " + ctx_r0.color);
     i0.ɵɵadvance();
     i0.ɵɵtextInterpolate(ctx_r0.pointValue);
 } }
 function CategoryBadgeComponent_Conditional_1_Template(rf, ctx) { if (rf & 1) {
     i0.ɵɵelementStart(0, "div", 4);
-    i0.ɵɵelement(1, "div", 5);
-    i0.ɵɵelementStart(2, "div", 6);
+    i0.ɵɵelement(1, "div", 5)(2, "div", 6);
+    i0.ɵɵelementStart(3, "div", 7);
     i0.ɵɵnamespaceSVG();
-    i0.ɵɵelementStart(3, "svg", 3);
-    i0.ɵɵelement(4, "path");
+    i0.ɵɵelementStart(4, "svg", 3);
+    i0.ɵɵelement(5, "path");
     i0.ɵɵelementEnd()();
     i0.ɵɵnamespaceHTML();
-    i0.ɵɵelementStart(5, "span", 7);
-    i0.ɵɵtext(6);
+    i0.ɵɵelementStart(6, "span", 8);
+    i0.ɵɵtext(7);
     i0.ɵɵelementEnd();
-    i0.ɵɵconditionalCreate(7, CategoryBadgeComponent_Conditional_1_Conditional_7_Template, 6, 3, "div", 8);
+    i0.ɵɵconditionalCreate(8, CategoryBadgeComponent_Conditional_1_Conditional_8_Template, 6, 3, "div", 9);
     i0.ɵɵelementEnd();
 } if (rf & 2) {
     const ctx_r0 = i0.ɵɵnextContext();
     i0.ɵɵstyleProp("border-color", ctx_r0.color + "40")("--category-color", ctx_r0.color);
-    i0.ɵɵproperty("ngClass", i0.ɵɵpureFunction2(18, _c0, ctx_r0.sizeClasses[ctx_r0.size], ctx_r0.isHighlighted ? "shadow-2xl z-10 ring-1 ring-white/25" : "hover:scale-[1.02]"));
+    i0.ɵɵproperty("ngClass", i0.ɵɵpureFunction2(20, _c0, ctx_r0.sizeClasses[ctx_r0.size], ctx_r0.isHighlighted ? "shadow-2xl z-10 ring-1 ring-white/25" : ""));
+    i0.ɵɵadvance();
+    i0.ɵɵstyleProp("background-position", ctx_r0.categoryArtPosition);
     i0.ɵɵadvance();
     i0.ɵɵstyleProp("background-color", ctx_r0.color);
     i0.ɵɵadvance();
-    i0.ɵɵstyleProp("background-color", ctx_r0.color)("box-shadow", ctx_r0.isHighlighted ? "0 0 15px " + ctx_r0.color + "80" : "none");
+    i0.ɵɵstyleProp("background-color", ctx_r0.color)("box-shadow", ctx_r0.isHighlighted ? "0 0 0.9375rem " + ctx_r0.color + "80" : "none");
     i0.ɵɵproperty("ngClass", ctx_r0.iconSizeClasses[ctx_r0.size]);
     i0.ɵɵadvance(2);
     i0.ɵɵattribute("d", ctx_r0.iconPath);
@@ -61,7 +63,7 @@ function CategoryBadgeComponent_Conditional_1_Template(rf, ctx) { if (rf & 1) {
     i0.ɵɵadvance();
     i0.ɵɵtextInterpolate1(" ", ctx_r0.name, " ");
     i0.ɵɵadvance();
-    i0.ɵɵconditional(ctx_r0.pointValue !== undefined && ctx_r0.pointValue > 0 ? 7 : -1);
+    i0.ɵɵconditional(ctx_r0.pointValue !== undefined && ctx_r0.pointValue > 0 ? 8 : -1);
 } }
 export class CategoryBadgeComponent {
     name;
@@ -94,13 +96,41 @@ export class CategoryBadgeComponent {
         cpu: 'M8 8h8v8H8zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3',
         tv: 'M4 6h16v12H4zM9 22h6M8 2l4 4 4-4',
     };
+    artIndexes = {
+        palette: 0,
+        building: 1,
+        flask: 2,
+        film: 3,
+        trophy: 4,
+        utensils: 5,
+        globe: 6,
+        landmark: 7,
+        languages: 8,
+        'book-open': 9,
+        calculator: 10,
+        music: 11,
+        leaf: 12,
+        briefcase: 13,
+        'landmark-dome': 14,
+        star: 15,
+        church: 16,
+        'heart-pulse': 17,
+        cpu: 18,
+        tv: 19,
+    };
     get iconPath() {
         return this.paths[this.icon] ?? 'M12 3v18M3 12h18';
     }
+    get categoryArtPosition() {
+        const index = this.artIndexes[this.icon] ?? 0;
+        const column = index % 2;
+        const row = Math.floor(index / 2);
+        return `${column * 100}% ${row * (100 / 9)}%`;
+    }
     sizeClasses = {
-        sm: 'p-1.5 pr-3 min-w-[140px]',
-        md: 'p-2 pr-4 min-w-[200px]',
-        lg: 'p-3 pr-6 min-w-[280px]',
+        sm: 'p-1.5 pr-3 min-w-[8.75rem]',
+        md: 'p-2 pr-4 min-w-[12.5rem]',
+        lg: 'p-3 pr-6 min-w-[17.5rem]',
     };
     iconSizeClasses = {
         sm: 'w-8 h-8 text-lg',
@@ -113,15 +143,15 @@ export class CategoryBadgeComponent {
         lg: 'text-xl',
     };
     static ɵfac = function CategoryBadgeComponent_Factory(__ngFactoryType__) { return new (__ngFactoryType__ || CategoryBadgeComponent)(); };
-    static ɵcmp = /*@__PURE__*/ i0.ɵɵdefineComponent({ type: CategoryBadgeComponent, selectors: [["app-category-badge"]], inputs: { name: "name", icon: "icon", color: "color", pointValue: "pointValue", size: "size", isHighlighted: "isHighlighted", compact: "compact", compactSize: "compactSize" }, decls: 2, vars: 1, consts: [["role", "img", 1, "category-icon", 3, "category-icon--lg", "backgroundColor"], [1, "relative", "flex", "items-center", "gap-3", "rounded-2xl", "glass", "transition-all", "duration-300", "group", "overflow-hidden", 3, "ngClass", "borderColor", "--category-color"], ["role", "img", 1, "category-icon"], ["viewBox", "0 0 24 24", "aria-hidden", "true", 1, "category-svg"], [1, "relative", "flex", "items-center", "gap-3", "rounded-2xl", "glass", "transition-all", "duration-300", "group", "overflow-hidden", 3, "ngClass"], [1, "absolute", "inset-0", "opacity-10", "transition-opacity", "group-hover:opacity-20"], [1, "flex", "items-center", "justify-center", "rounded-xl", "shadow-inner", "relative", "z-10", 3, "ngClass"], [1, "font-display", "font-semibold", "tracking-wide", "relative", "z-10", "truncate", "pr-2", 3, "ngClass"], [1, "absolute", "top-0", "right-0", "h-full", "flex", "items-center", "justify-center", "bg-black/40", "backdrop-blur-md", "border-l", "border-white/10", "px-4", "shadow-xl", "z-20"], [1, "flex", "flex-col", "items-center"], [1, "text-xs", "font-bold", "text-white/70", "uppercase", "tracking-widest", "mb-0.5"], [1, "text-2xl", "font-black", "text-white"]], template: function CategoryBadgeComponent_Template(rf, ctx) { if (rf & 1) {
-            i0.ɵɵconditionalCreate(0, CategoryBadgeComponent_Conditional_0_Template, 3, 7, "div", 0)(1, CategoryBadgeComponent_Conditional_1_Template, 8, 21, "div", 1);
+    static ɵcmp = /*@__PURE__*/ i0.ɵɵdefineComponent({ type: CategoryBadgeComponent, selectors: [["app-category-badge"]], inputs: { name: "name", icon: "icon", color: "color", pointValue: "pointValue", size: "size", isHighlighted: "isHighlighted", compact: "compact", compactSize: "compactSize" }, decls: 2, vars: 1, consts: [["role", "img", 1, "category-icon", 3, "category-icon--lg", "backgroundColor"], [1, "relative", "flex", "items-center", "gap-3", "rounded-2xl", "glass", "transition-all", "duration-300", "group", "overflow-hidden", 3, "ngClass", "borderColor", "--category-color"], ["role", "img", 1, "category-icon"], ["viewBox", "0 0 24 24", "aria-hidden", "true", 1, "category-svg"], [1, "relative", "flex", "items-center", "gap-3", "rounded-2xl", "glass", "transition-all", "duration-300", "group", "overflow-hidden", 3, "ngClass"], ["aria-hidden", "true", 1, "category-art"], [1, "absolute", "inset-0", "opacity-10", "transition-opacity", "group-hover:opacity-20"], [1, "flex", "items-center", "justify-center", "rounded-xl", "shadow-inner", "relative", "z-10", 3, "ngClass"], [1, "font-display", "font-semibold", "tracking-wide", "relative", "z-10", "truncate", "pr-2", 3, "ngClass"], [1, "absolute", "top-0", "right-0", "h-full", "flex", "items-center", "justify-center", "bg-black/40", "backdrop-blur-md", "border-l", "border-white/10", "px-4", "shadow-xl", "z-20"], [1, "flex", "flex-col", "items-center"], [1, "text-xs", "font-bold", "text-white/70", "uppercase", "tracking-widest", "mb-0.5"], [1, "text-2xl", "font-black", "text-white"]], template: function CategoryBadgeComponent_Template(rf, ctx) { if (rf & 1) {
+            i0.ɵɵconditionalCreate(0, CategoryBadgeComponent_Conditional_0_Template, 3, 7, "div", 0)(1, CategoryBadgeComponent_Conditional_1_Template, 9, 23, "div", 1);
         } if (rf & 2) {
             i0.ɵɵconditional(ctx.compact ? 0 : 1);
-        } }, dependencies: [NgClass], styles: ["[_nghost-%COMP%] { display: block; min-width: 0; }\n.relative.flex.items-center[_ngcontent-%COMP%] { min-height: 4.3rem; border: 1px solid color-mix(in srgb, var(--category-color, #7b2cff) 42%, rgb(255 255 255 / .08)); background: linear-gradient(110deg, rgb(11 13 33 / .91), color-mix(in srgb, var(--category-color, #7b2cff) 13%, rgb(10 8 26 / .88))); box-shadow: inset 0 1px 0 rgb(255 255 255 / .10), inset 0 -12px 24px rgb(0 0 0 / .12), 0 7px 18px rgb(0 0 0 / .18); }\n.relative.flex.items-center[_ngcontent-%COMP%]::after { content: ''; position: absolute; inset: 0; opacity: .35; background: linear-gradient(125deg, rgb(255 255 255 / .10), transparent 24% 68%, color-mix(in srgb, var(--category-color, #7b2cff) 25%, transparent)); pointer-events: none; }\n.relative.flex.items-center[_ngcontent-%COMP%]:hover { transform: translateY(-2px) scale(1.012); box-shadow: 0 12px 24px rgb(0 0 0 / .26), 0 0 18px color-mix(in srgb, var(--category-color, #7b2cff) 18%, transparent), inset 0 1px 0 rgb(255 255 255 / .14); }\n.category-svg[_ngcontent-%COMP%] { width: 56%; height: 56%; fill: none; stroke: white; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 2px 5px rgb(0 0 0 / .35)); }\n.category-icon[_ngcontent-%COMP%] { display: grid; width: 2.15rem; height: 2.15rem; place-items: center; border: 1px solid rgb(255 255 255 / .26); border-radius: .7rem; box-shadow: inset 0 1px 0 rgb(255 255 255 / .24), inset 0 -8px 15px rgb(0 0 0 / .14), 0 3px 12px rgb(0 0 0 / .28); }\n.category-icon--lg[_ngcontent-%COMP%] { width: 3.5rem; height: 3.5rem; border-radius: 50%; }"] });
+        } }, dependencies: [NgClass], styles: ["[_nghost-%COMP%] { display: block; min-width: 0; }\n.relative.flex.items-center[_ngcontent-%COMP%] { isolation: isolate; min-height: 4.3rem; border: 0.0625rem solid color-mix(in srgb, var(--category-color, #7b2cff) 48%, rgb(255 255 255 / .08)); background: radial-gradient(circle at 76% 15%, color-mix(in srgb, var(--category-color, #7b2cff) 24%, transparent), transparent 42%), linear-gradient(110deg, rgb(11 13 33 / .94), color-mix(in srgb, var(--category-color, #7b2cff) 15%, rgb(10 8 26 / .91))); box-shadow: inset 0 0.0625rem 0 rgb(255 255 255 / .12), inset 0 -0.875rem 1.75rem rgb(0 0 0 / .2), 0 0.5rem 1.25rem rgb(0 0 0 / .22); }\n.category-art[_ngcontent-%COMP%] { position: absolute; z-index: 0; inset: 0; background-image: linear-gradient(90deg, rgb(5 5 20 / .82) 0%, rgb(5 5 20 / .46) 46%, rgb(5 5 20 / .18) 100%), url('/assets/categories/category-atlas-v3.webp'); background-repeat: no-repeat; background-size: 200% 1000%; opacity: .82; filter: saturate(.9) contrast(1.08); transform: scale(1.015); transition: opacity .25s ease, transform .35s ease, filter .25s ease; }\n.relative.flex.items-center[_ngcontent-%COMP%]:hover   .category-art[_ngcontent-%COMP%] { opacity: .94; filter: saturate(1.08) contrast(1.1); transform: scale(1.045); }\n.relative.flex.items-center[_ngcontent-%COMP%]::before { content: ''; position: absolute; z-index: 0; inset: 0; opacity: .34; background-image: linear-gradient(128deg, transparent 0 42%, color-mix(in srgb, var(--category-color, #7b2cff) 24%, transparent) 43%, transparent 44%), radial-gradient(circle at 80% 30%, rgb(255 255 255 / .2) 0 0.0625rem, transparent 0.125rem), radial-gradient(circle at 68% 72%, color-mix(in srgb, var(--category-color, #7b2cff) 75%, white) 0 0.0625rem, transparent 0.125rem); background-size: 100% 100%, 2.3125rem 1.8125rem, 3.1875rem 2.6875rem; mask-image: linear-gradient(90deg, transparent 12%, black 48%, black); pointer-events: none; }\n.relative.flex.items-center[_ngcontent-%COMP%]::after { content: ''; position: absolute; inset: 0; opacity: .48; background: linear-gradient(125deg, rgb(255 255 255 / .12), transparent 19% 68%, color-mix(in srgb, var(--category-color, #7b2cff) 28%, transparent)); pointer-events: none; }\n.relative.flex.items-center[_ngcontent-%COMP%]:hover { transform: translateY(-0.125rem); box-shadow: 0 0.75rem 1.5rem rgb(0 0 0 / .26), 0 0 1.125rem color-mix(in srgb, var(--category-color, #7b2cff) 18%, transparent), inset 0 0.0625rem 0 rgb(255 255 255 / .14); }\n.category-svg[_ngcontent-%COMP%] { width: 56%; height: 56%; fill: none; stroke: white; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0.125rem 0.3125rem rgb(0 0 0 / .35)); }\n.category-icon[_ngcontent-%COMP%] { display: grid; width: 2.15rem; height: 2.15rem; place-items: center; border: 0.0625rem solid rgb(255 255 255 / .32); border-radius: .7rem; box-shadow: inset 0 0.0625rem 0 rgb(255 255 255 / .28), inset 0 -0.5rem 0.9375rem rgb(0 0 0 / .14), 0 0.1875rem 0.75rem rgb(0 0 0 / .32), 0 0 0.875rem color-mix(in srgb, currentColor 15%, transparent); }\n.category-icon--lg[_ngcontent-%COMP%] { width: 3.5rem; height: 3.5rem; border-radius: 50%; }"] });
 }
 (() => { (typeof ngDevMode === "undefined" || ngDevMode) && i0.ɵsetClassMetadata(CategoryBadgeComponent, [{
         type: Component,
-        args: [{ selector: 'app-category-badge', standalone: true, imports: [NgClass], template: "@if (compact) {\n  <div\n    class=\"category-icon\"\n    [class.category-icon--lg]=\"compactSize === 'lg'\"\n    [style.backgroundColor]=\"color\"\n    [attr.title]=\"name\"\n    [attr.aria-label]=\"name\"\n    role=\"img\"\n  >\n    <svg class=\"category-svg\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n      <path [attr.d]=\"iconPath\"></path>\n    </svg>\n  </div>\n} @else {\n  <div\n    class=\"relative flex items-center gap-3 rounded-2xl glass transition-all duration-300 group overflow-hidden\"\n    [ngClass]=\"[\n      sizeClasses[size],\n      isHighlighted ? 'shadow-2xl z-10 ring-1 ring-white/25' : 'hover:scale-[1.02]',\n    ]\"\n    [style.borderColor]=\"color + '40'\"\n    [style.--category-color]=\"color\"\n  >\n    <!-- Background Tint -->\n    <div\n      class=\"absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20\"\n      [style.backgroundColor]=\"color\"\n    ></div>\n    <!-- Icon Container -->\n    <div\n      class=\"flex items-center justify-center rounded-xl shadow-inner relative z-10\"\n      [ngClass]=\"iconSizeClasses[size]\"\n      [style.backgroundColor]=\"color\"\n      [style.boxShadow]=\"isHighlighted ? '0 0 15px ' + color + '80' : 'none'\"\n    >\n      <svg class=\"category-svg\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n        <path [attr.d]=\"iconPath\"></path>\n      </svg>\n    </div>\n    <!-- Category Name -->\n    <span\n      class=\"font-display font-semibold tracking-wide relative z-10 truncate pr-2\"\n      [ngClass]=\"textSizeClasses[size]\"\n      [style.color]=\"isHighlighted ? 'white' : 'var(--color-text)'\"\n    >\n      {{ name }}\n    </span>\n    <!-- Point Value Badge (if assigned) -->\n    @if (pointValue !== undefined && pointValue > 0) {\n      <div\n        class=\"absolute top-0 right-0 h-full flex items-center justify-center bg-black/40 backdrop-blur-md border-l border-white/10 px-4 shadow-xl z-20\"\n      >\n        <div class=\"flex flex-col items-center\">\n          <span class=\"text-xs font-bold text-white/70 uppercase tracking-widest mb-0.5\">PTS</span>\n          <span class=\"text-2xl font-black text-white\" [style.textShadow]=\"'0 0 10px ' + color\">{{\n            pointValue\n          }}</span>\n        </div>\n      </div>\n    }\n  </div>\n}\n", styles: [":host { display: block; min-width: 0; }\n.relative.flex.items-center { min-height: 4.3rem; border: 1px solid color-mix(in srgb, var(--category-color, #7b2cff) 42%, rgb(255 255 255 / .08)); background: linear-gradient(110deg, rgb(11 13 33 / .91), color-mix(in srgb, var(--category-color, #7b2cff) 13%, rgb(10 8 26 / .88))); box-shadow: inset 0 1px 0 rgb(255 255 255 / .10), inset 0 -12px 24px rgb(0 0 0 / .12), 0 7px 18px rgb(0 0 0 / .18); }\n.relative.flex.items-center::after { content: ''; position: absolute; inset: 0; opacity: .35; background: linear-gradient(125deg, rgb(255 255 255 / .10), transparent 24% 68%, color-mix(in srgb, var(--category-color, #7b2cff) 25%, transparent)); pointer-events: none; }\n.relative.flex.items-center:hover { transform: translateY(-2px) scale(1.012); box-shadow: 0 12px 24px rgb(0 0 0 / .26), 0 0 18px color-mix(in srgb, var(--category-color, #7b2cff) 18%, transparent), inset 0 1px 0 rgb(255 255 255 / .14); }\n.category-svg { width: 56%; height: 56%; fill: none; stroke: white; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 2px 5px rgb(0 0 0 / .35)); }\n.category-icon { display: grid; width: 2.15rem; height: 2.15rem; place-items: center; border: 1px solid rgb(255 255 255 / .26); border-radius: .7rem; box-shadow: inset 0 1px 0 rgb(255 255 255 / .24), inset 0 -8px 15px rgb(0 0 0 / .14), 0 3px 12px rgb(0 0 0 / .28); }\n.category-icon--lg { width: 3.5rem; height: 3.5rem; border-radius: 50%; }\n"] }]
+        args: [{ selector: 'app-category-badge', standalone: true, imports: [NgClass], template: "@if (compact) {\n  <div\n    class=\"category-icon\"\n    [class.category-icon--lg]=\"compactSize === 'lg'\"\n    [style.backgroundColor]=\"color\"\n    [attr.title]=\"name\"\n    [attr.aria-label]=\"name\"\n    role=\"img\"\n  >\n    <svg class=\"category-svg\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n      <path [attr.d]=\"iconPath\"></path>\n    </svg>\n  </div>\n} @else {\n  <div\n    class=\"relative flex items-center gap-3 rounded-2xl glass transition-all duration-300 group overflow-hidden\"\n    [ngClass]=\"[\n      sizeClasses[size],\n      isHighlighted ? 'shadow-2xl z-10 ring-1 ring-white/25' : '',\n    ]\"\n    [style.borderColor]=\"color + '40'\"\n    [style.--category-color]=\"color\"\n  >\n    <div\n      class=\"category-art\"\n      aria-hidden=\"true\"\n      [style.backgroundPosition]=\"categoryArtPosition\"\n    ></div>\n    <!-- Background Tint -->\n    <div\n      class=\"absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20\"\n      [style.backgroundColor]=\"color\"\n    ></div>\n    <!-- Icon Container -->\n    <div\n      class=\"flex items-center justify-center rounded-xl shadow-inner relative z-10\"\n      [ngClass]=\"iconSizeClasses[size]\"\n      [style.backgroundColor]=\"color\"\n      [style.boxShadow]=\"isHighlighted ? '0 0 0.9375rem ' + color + '80' : 'none'\"\n    >\n      <svg class=\"category-svg\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n        <path [attr.d]=\"iconPath\"></path>\n      </svg>\n    </div>\n    <!-- Category Name -->\n    <span\n      class=\"font-display font-semibold tracking-wide relative z-10 truncate pr-2\"\n      [ngClass]=\"textSizeClasses[size]\"\n      [style.color]=\"isHighlighted ? 'white' : 'var(--color-text)'\"\n    >\n      {{ name }}\n    </span>\n    <!-- Point Value Badge (if assigned) -->\n    @if (pointValue !== undefined && pointValue > 0) {\n      <div\n        class=\"absolute top-0 right-0 h-full flex items-center justify-center bg-black/40 backdrop-blur-md border-l border-white/10 px-4 shadow-xl z-20\"\n      >\n        <div class=\"flex flex-col items-center\">\n          <span class=\"text-xs font-bold text-white/70 uppercase tracking-widest mb-0.5\">PTS</span>\n          <span class=\"text-2xl font-black text-white\" [style.textShadow]=\"'0 0 0.625rem ' + color\">{{\n            pointValue\n          }}</span>\n        </div>\n      </div>\n    }\n  </div>\n}\n", styles: [":host { display: block; min-width: 0; }\n.relative.flex.items-center { isolation: isolate; min-height: 4.3rem; border: 0.0625rem solid color-mix(in srgb, var(--category-color, #7b2cff) 48%, rgb(255 255 255 / .08)); background: radial-gradient(circle at 76% 15%, color-mix(in srgb, var(--category-color, #7b2cff) 24%, transparent), transparent 42%), linear-gradient(110deg, rgb(11 13 33 / .94), color-mix(in srgb, var(--category-color, #7b2cff) 15%, rgb(10 8 26 / .91))); box-shadow: inset 0 0.0625rem 0 rgb(255 255 255 / .12), inset 0 -0.875rem 1.75rem rgb(0 0 0 / .2), 0 0.5rem 1.25rem rgb(0 0 0 / .22); }\n.category-art { position: absolute; z-index: 0; inset: 0; background-image: linear-gradient(90deg, rgb(5 5 20 / .82) 0%, rgb(5 5 20 / .46) 46%, rgb(5 5 20 / .18) 100%), url('/assets/categories/category-atlas-v3.webp'); background-repeat: no-repeat; background-size: 200% 1000%; opacity: .82; filter: saturate(.9) contrast(1.08); transform: scale(1.015); transition: opacity .25s ease, transform .35s ease, filter .25s ease; }\n.relative.flex.items-center:hover .category-art { opacity: .94; filter: saturate(1.08) contrast(1.1); transform: scale(1.045); }\n.relative.flex.items-center::before { content: ''; position: absolute; z-index: 0; inset: 0; opacity: .34; background-image: linear-gradient(128deg, transparent 0 42%, color-mix(in srgb, var(--category-color, #7b2cff) 24%, transparent) 43%, transparent 44%), radial-gradient(circle at 80% 30%, rgb(255 255 255 / .2) 0 0.0625rem, transparent 0.125rem), radial-gradient(circle at 68% 72%, color-mix(in srgb, var(--category-color, #7b2cff) 75%, white) 0 0.0625rem, transparent 0.125rem); background-size: 100% 100%, 2.3125rem 1.8125rem, 3.1875rem 2.6875rem; mask-image: linear-gradient(90deg, transparent 12%, black 48%, black); pointer-events: none; }\n.relative.flex.items-center::after { content: ''; position: absolute; inset: 0; opacity: .48; background: linear-gradient(125deg, rgb(255 255 255 / .12), transparent 19% 68%, color-mix(in srgb, var(--category-color, #7b2cff) 28%, transparent)); pointer-events: none; }\n.relative.flex.items-center:hover { transform: translateY(-0.125rem); box-shadow: 0 0.75rem 1.5rem rgb(0 0 0 / .26), 0 0 1.125rem color-mix(in srgb, var(--category-color, #7b2cff) 18%, transparent), inset 0 0.0625rem 0 rgb(255 255 255 / .14); }\n.category-svg { width: 56%; height: 56%; fill: none; stroke: white; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0.125rem 0.3125rem rgb(0 0 0 / .35)); }\n.category-icon { display: grid; width: 2.15rem; height: 2.15rem; place-items: center; border: 0.0625rem solid rgb(255 255 255 / .32); border-radius: .7rem; box-shadow: inset 0 0.0625rem 0 rgb(255 255 255 / .28), inset 0 -0.5rem 0.9375rem rgb(0 0 0 / .14), 0 0.1875rem 0.75rem rgb(0 0 0 / .32), 0 0 0.875rem color-mix(in srgb, currentColor 15%, transparent); }\n.category-icon--lg { width: 3.5rem; height: 3.5rem; border-radius: 50%; }\n"] }]
     }], null, { name: [{
             type: Input,
             args: [{ required: true }]

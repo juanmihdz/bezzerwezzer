@@ -1,9 +1,11 @@
 package com.bezzerwizzer.service;
 
 import com.bezzerwizzer.game.*;
+import com.bezzerwizzer.model.Question;
 import com.bezzerwizzer.model.enums.GamePhase;
 import com.bezzerwizzer.websocket.dto.GameEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -16,14 +18,16 @@ import java.util.stream.Collectors;
 import com.bezzerwizzer.websocket.dto.AnswerDTO;
 import com.bezzerwizzer.websocket.dto.ZwapAction;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GameService {
 
     private static final int TURN_PREPARATION_SECONDS = 10;
+    private static final int ZWAP_SECONDS = 40;
     private static final int ANSWER_SECONDS = 30;
     private static final int REBOUND_SECONDS = 10;
-    
+
     private final RoomService roomService;
     private final RoundManager roundManager;
     private final TurnManager turnManager;
@@ -40,7 +44,7 @@ public class GameService {
         if (!room.isReady()) {
             throw new RuntimeException("No todos los jugadores están listos");
         }
-        
+
         roundManager.startNewRound(room);
         broadcastGameState(room);
     }
@@ -64,7 +68,7 @@ public class GameService {
                 !new java.util.HashSet<>(points).equals(Set.of(1, 2, 3, 4))) {
             throw new com.bezzerwizzer.exception.GameException("Debes asignar una vez cada valor del 1 al 4");
         }
-        
+
         PlayerState player = room.getPlayers().get(playerId);
         if (player == null) {
             throw new com.bezzerwizzer.exception.GameException("Jugador no encontrado");
@@ -80,14 +84,14 @@ public class GameService {
         player.getCategorySlots().sort((first, second) ->
                 Integer.compare(first.getPointValue(), second.getPointValue()));
         room.getCategoryAssignmentConfirmed().add(playerId);
-        
+
         boolean allReady = room.getCategoryAssignmentConfirmed().containsAll(room.getPlayers().keySet());
-                
+
         if (allReady) {
             room.setPhase(GamePhase.PLAYING);
             broadcastTurnReady(room);
         }
-        
+
         broadcastGameState(room);
     }
 
@@ -103,6 +107,13 @@ public class GameService {
 
         String submitted = answer.getSelectedOption() != null
                 ? answer.getSelectedOption() : answer.getFreeTextAnswer();
+
+        log.info("DEBUG handleAnswer - PlayerId: {}, SelectedOption: '{}', FreeText: '{}', Submitted: '{}'",
+            playerId,
+            answer.getSelectedOption(),
+            answer.getFreeTextAnswer(),
+            submitted);
+
         if (!playerId.equals(room.getCurrentAnswerPlayerId())) {
             savePreparedBezzerwizzerAnswer(room, playerId, submitted);
             return;
@@ -131,7 +142,21 @@ public class GameService {
     }
 
     private void completeCurrentTurn(GameRoom room, String playerId, String submitted, Boolean preparedCorrect) {
-        boolean correct = preparedCorrect != null ? preparedCorrect : scoringService.isCorrect(room.getCurrentQuestion(), submitted);
+        Question currentQuestion = room.getCurrentQuestion();
+        boolean correct = preparedCorrect != null ? preparedCorrect : scoringService.isCorrect(currentQuestion, submitted);
+
+        // Debug logging
+        if (currentQuestion != null) {
+            log.info("DEBUG Answer Validation - QuestionId: {}, Text: '{}', Submitted: '{}', Type: {}, CorrectOption: '{}', CorrectAnswer: '{}', Result: {}",
+                currentQuestion.getId(),
+                currentQuestion.getQuestionText(),
+                submitted,
+                currentQuestion.getQuestionType(),
+                currentQuestion.getCorrectOption(),
+                currentQuestion.getCorrectAnswer(),
+                correct);
+        }
+
         boolean isRebound = !playerId.equals(room.getCurrentTurnPlayerId());
         boolean earlyBezzerwizzer = room.getEarlyBezzerwizzers().contains(playerId);
         int points = correct ? (isRebound ? (earlyBezzerwizzer ? 3 : 1)
@@ -143,7 +168,8 @@ public class GameService {
         result.put("playerId", playerId);
         result.put("correct", correct);
         result.put("points", points);
-        result.put("correctAnswer", correctAnswer(room.getCurrentQuestion()));
+        result.put("correctOption", scoringService.correctOptionKey(room.getCurrentQuestion()));
+        result.put("correctAnswer", scoringService.correctAnswerText(room.getCurrentQuestion()));
         messagingTemplate.convertAndSend("/topic/room/" + room.getRoomCode() + "/game",
                 new GameEvent("ANSWER_RESULT", result));
 
@@ -178,6 +204,12 @@ public class GameService {
     }
 
     private void finishResolvedTurn(GameRoom room) {
+        // A completed turn must not leak its challengers into the next turn or
+        // into the category-assignment screen at the end of a round.
+        room.getBezzerwizzerQueue().clear();
+        room.getBezzerwizzerAnswers().clear();
+        room.getBezzerwizzerChallenges().clear();
+        room.getEarlyBezzerwizzers().clear();
         PlayerState originalPlayer = room.getPlayers().get(room.getCurrentTurnPlayerId());
         originalPlayer.getCategorySlots().get(room.getCurrentCategorySlotIndex()).setAnswered(true);
         originalPlayer.setHasAnswered(true);
@@ -197,12 +229,61 @@ public class GameService {
         GameRoom room = roomService.getRoom(roomCode);
         tacticalTileService.processZwap(room, playerId, action.getTargetPlayerId(),
                 action.getMySlotIndex(), action.getTargetSlotIndex());
+        PlayerState current = room.getPlayers().get(playerId);
+        PlayerState target = room.getPlayers().get(action.getTargetPlayerId());
+        resumePreparation(room);
+        messagingTemplate.convertAndSend("/topic/room/" + room.getRoomCode() + "/game",
+                new GameEvent("ZWAP_APPLIED", Map.of(
+                        "playerId", playerId,
+                        "playerName", displayName(current),
+                        // The post-swap slots contain the other category, so read the
+                        // opposite player to report the categories chosen beforehand.
+                        "sourceCategory", categoryName(target, action.getTargetSlotIndex()),
+                        "targetPlayerId", target.getPlayerId(),
+                        "targetPlayerName", displayName(target),
+                        "targetCategory", categoryName(current, action.getMySlotIndex()))));
+        broadcastGameState(room);
+    }
+
+    /** Pauses the normal preparation clock while the player selects a ZWAP. */
+    public synchronized void beginZwap(String roomCode, String playerId) {
+        GameRoom room = roomService.getRoom(roomCode);
+        if (room.getPhase() != GamePhase.PLAYING || !playerId.equals(room.getCurrentTurnPlayerId())) {
+            throw new com.bezzerwizzer.exception.GameException("Solo puedes usar ZWAP durante la preparación de tu turno");
+        }
+        PlayerState player = room.getPlayers().get(playerId);
+        if (player == null || player.getZwapsRemaining() <= 0) {
+            throw new com.bezzerwizzer.exception.GameException("No te quedan fichas ZWAP");
+        }
+        room.setPendingZwapPlayerId(playerId);
+        room.setPausedPreparationMillis(Math.max(0, room.getPreparationDeadlineAt() - System.currentTimeMillis()));
+        room.setPhase(GamePhase.ZWAP);
+        room.setZwapDeadlineAt(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(ZWAP_SECONDS));
+        scheduleZwapTimeout(room.getRoomCode(), playerId, room.getZwapDeadlineAt());
+        broadcastGameState(room);
+    }
+
+    /** Releases the ZWAP lock without spending the tile. */
+    public synchronized void cancelZwap(String roomCode, String playerId) {
+        GameRoom room = roomService.getRoom(roomCode);
+        if (room.getPhase() != GamePhase.ZWAP || !playerId.equals(room.getPendingZwapPlayerId())) {
+            throw new com.bezzerwizzer.exception.GameException("No tienes un ZWAP en curso");
+        }
+        resumePreparation(room);
         broadcastGameState(room);
     }
 
     public synchronized void handleBezzerwizzer(String roomCode, String playerId, String targetPlayerId) {
         GameRoom room = roomService.getRoom(roomCode);
         tacticalTileService.processBezzerwizzer(room, playerId, targetPlayerId);
+        PlayerState challenger = room.getPlayers().get(playerId);
+        PlayerState target = room.getPlayers().get(targetPlayerId);
+        messagingTemplate.convertAndSend("/topic/room/" + room.getRoomCode() + "/game",
+                new GameEvent("BEZZERWIZZER_PLAYED", Map.of(
+                        "playerId", playerId,
+                        "playerName", displayName(challenger),
+                        "targetPlayerId", targetPlayerId,
+                        "targetPlayerName", displayName(target))));
         broadcastGameState(room);
     }
 
@@ -239,16 +320,12 @@ public class GameService {
         room.setCurrentAnswerPlayerId(null);
         turnManager.prepareTurn(room);
         room.setTurnStartTime(System.currentTimeMillis());
+        room.setPreparationDeadlineAt(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(TURN_PREPARATION_SECONDS));
         messagingTemplate.convertAndSend("/topic/room/" + room.getRoomCode() + "/game",
                 new GameEvent("TURN_READY", Map.of(
                         "playerId", room.getCurrentTurnPlayerId(),
                         "timeLimit", TURN_PREPARATION_SECONDS)));
-        scheduleQuestionStart(room.getRoomCode(), room.getCurrentTurnPlayerId());
-    }
-
-    private String correctAnswer(com.bezzerwizzer.model.Question question) {
-        return question.getQuestionType() == com.bezzerwizzer.model.enums.QuestionType.MULTIPLE_CHOICE
-                ? question.getCorrectOption() : question.getCorrectAnswer();
+        scheduleQuestionStart(room.getRoomCode(), room.getCurrentTurnPlayerId(), room.getPreparationDeadlineAt());
     }
 
     private void broadcastTurnStart(GameRoom room) {
@@ -282,18 +359,39 @@ public class GameService {
     }
 
     /** Keeps the game moving even if the active player's browser misses the timer event. */
-    private void scheduleQuestionStart(String roomCode, String expectedPlayerId) {
+    private void scheduleQuestionStart(String roomCode, String expectedPlayerId, long expectedDeadlineAt) {
+        long delay = Math.max(0, expectedDeadlineAt - System.currentTimeMillis());
         gameTimerScheduler.schedule(
-                () -> startQuestionIfStillPreparing(roomCode, expectedPlayerId),
-                TURN_PREPARATION_SECONDS,
-                TimeUnit.SECONDS);
+                () -> startQuestionIfStillPreparing(roomCode, expectedPlayerId, expectedDeadlineAt),
+                delay, TimeUnit.MILLISECONDS);
     }
 
-    private synchronized void startQuestionIfStillPreparing(String roomCode, String expectedPlayerId) {
+    private synchronized void startQuestionIfStillPreparing(String roomCode, String expectedPlayerId, long expectedDeadlineAt) {
         try {
             GameRoom room = roomService.getRoom(roomCode);
-            if (room.getPhase() == GamePhase.PLAYING && expectedPlayerId.equals(room.getCurrentTurnPlayerId())) {
+            if (room.getPhase() == GamePhase.PLAYING && expectedPlayerId.equals(room.getCurrentTurnPlayerId())
+                    && expectedDeadlineAt == room.getPreparationDeadlineAt()) {
                 startQuestion(room);
+            }
+        } catch (RuntimeException ignored) {
+            // The room may have closed while the delayed task was waiting.
+        }
+    }
+
+    private void scheduleZwapTimeout(String roomCode, String expectedPlayerId, long expectedDeadlineAt) {
+        long delay = Math.max(0, expectedDeadlineAt - System.currentTimeMillis());
+        gameTimerScheduler.schedule(
+                () -> cancelZwapIfStillActive(roomCode, expectedPlayerId, expectedDeadlineAt),
+                delay, TimeUnit.MILLISECONDS);
+    }
+
+    private synchronized void cancelZwapIfStillActive(String roomCode, String expectedPlayerId, long expectedDeadlineAt) {
+        try {
+            GameRoom room = roomService.getRoom(roomCode);
+            if (room.getPhase() == GamePhase.ZWAP && expectedPlayerId.equals(room.getPendingZwapPlayerId())
+                    && expectedDeadlineAt == room.getZwapDeadlineAt()) {
+                resumePreparation(room);
+                broadcastGameState(room);
             }
         } catch (RuntimeException ignored) {
             // The room may have closed while the delayed task was waiting.
@@ -340,6 +438,7 @@ public class GameService {
             .players(room.getPlayers().values().stream().collect(Collectors.toList()))
             .currentTurnPlayerId(room.getCurrentTurnPlayerId())
             .currentAnswerPlayerId(room.getCurrentAnswerPlayerId())
+            .pendingZwapPlayerId(room.getPendingZwapPlayerId())
             .reboundQueue(List.copyOf(room.getBezzerwizzerQueue()))
             .bezzerwizzerPlayers(Set.copyOf(room.getBezzerwizzerChallenges().keySet()))
             .bezzerwizzerAnswered(Set.copyOf(room.getBezzerwizzerAnswers().keySet()))
@@ -348,13 +447,32 @@ public class GameService {
             .timer(remainingPreparationSeconds(room))
             .preparationSkipVotes(Set.copyOf(room.getPreparationSkipVotes()))
             .build();
-            
+
         messagingTemplate.convertAndSend("/topic/room/" + room.getRoomCode() + "/game", new GameEvent("GAME_STATE", state));
     }
 
     private int remainingPreparationSeconds(GameRoom room) {
-        if (room.getPhase() != GamePhase.PLAYING) return 0;
-        long elapsed = System.currentTimeMillis() - room.getTurnStartTime();
-        return Math.max(0, TURN_PREPARATION_SECONDS - (int) Math.ceil(elapsed / 1000.0));
+        long deadline = room.getPhase() == GamePhase.ZWAP ? room.getZwapDeadlineAt() : room.getPreparationDeadlineAt();
+        if (room.getPhase() != GamePhase.PLAYING && room.getPhase() != GamePhase.ZWAP) return 0;
+        return Math.max(0, (int) Math.ceil((deadline - System.currentTimeMillis()) / 1000.0));
+    }
+
+    private void resumePreparation(GameRoom room) {
+        room.setPendingZwapPlayerId(null);
+        room.setZwapDeadlineAt(0);
+        room.setPreparationDeadlineAt(System.currentTimeMillis() + room.getPausedPreparationMillis());
+        room.setPausedPreparationMillis(0);
+        room.setPhase(GamePhase.PLAYING);
+        scheduleQuestionStart(room.getRoomCode(), room.getCurrentTurnPlayerId(), room.getPreparationDeadlineAt());
+    }
+
+    private String categoryName(PlayerState player, int slotIndex) {
+        if (player == null || slotIndex < 0 || slotIndex >= player.getCategorySlots().size()) return "categoría";
+        return player.getCategorySlots().get(slotIndex).getCategory().getName();
+    }
+
+    private String displayName(PlayerState player) {
+        return player.getUsername() == null || player.getUsername().isBlank()
+                ? player.getPlayerId() : player.getUsername();
     }
 }

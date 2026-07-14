@@ -1,10 +1,36 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AudioService {
   private ctx: AudioContext | null = null;
+  readonly volume = signal(this.restoreVolume());
+  readonly muted = signal(this.volume() === 0);
+  private lastAudibleVolume = this.volume() || 0.7;
+
+  constructor() {
+    // Unlock Web Audio from the first user gesture so tactical events received
+    // later through WebSocket can be heard by spectators as well.
+    document.addEventListener('pointerdown', () => this.init(), { once: true });
+  }
+
+  private restoreVolume(): number {
+    const saved = Number(localStorage.getItem('bezzer-audio-volume'));
+    return Number.isFinite(saved) && saved >= 0 && saved <= 1 ? saved : 0.7;
+  }
+
+  setVolume(value: number): void {
+    const normalized = Math.min(1, Math.max(0, value));
+    this.volume.set(normalized);
+    this.muted.set(normalized === 0);
+    if (normalized > 0) this.lastAudibleVolume = normalized;
+    localStorage.setItem('bezzer-audio-volume', String(normalized));
+  }
+
+  toggleMute(): void {
+    this.setVolume(this.muted() ? this.lastAudibleVolume : 0);
+  }
 
   private init() {
     if (!this.ctx) {
@@ -17,6 +43,8 @@ export class AudioService {
 
   private playTone(freq: number, type: OscillatorType, duration: number, vol = 0.1) {
     try {
+      const outputVolume = vol * this.volume();
+      if (outputVolume <= 0) return;
       this.init();
       if (!this.ctx) return;
       
@@ -26,7 +54,7 @@ export class AudioService {
       osc.type = type;
       osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
       
-      gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+      gain.gain.setValueAtTime(outputVolume, this.ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
       
       osc.connect(gain);
@@ -55,5 +83,17 @@ export class AudioService {
 
   playNotification() {
     this.playTone(500, 'sine', 0.2);
+  }
+
+  playBezzerwizzer() {
+    this.playTone(180, 'sawtooth', 0.12, 0.16);
+    setTimeout(() => this.playTone(320, 'square', 0.16, 0.12), 90);
+    setTimeout(() => this.playTone(520, 'square', 0.25, 0.1), 190);
+  }
+
+  playZwap() {
+    this.playTone(720, 'sine', 0.11, 0.11);
+    setTimeout(() => this.playTone(420, 'triangle', 0.16, 0.12), 85);
+    setTimeout(() => this.playTone(860, 'sine', 0.22, 0.1), 170);
   }
 }

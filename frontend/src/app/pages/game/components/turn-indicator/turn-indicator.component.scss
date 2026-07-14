@@ -1,6 +1,6 @@
-.turn-pill { position: relative; max-width: min(100%, 40rem); overflow: hidden; border-color: rgb(207 137 255 / .34) !important; background: linear-gradient(115deg, rgb(28 12 61 / .92), rgb(5 7 25 / .91)); box-shadow: 0 12px 34px rgb(0 0 0 / .36), 0 0 24px rgb(255 25 200 / .13), inset 0 1px 0 rgb(255 255 255 / .13) !important; }
-.turn-pill::before { content: ''; position: absolute; width: 7rem; height: 7rem; left: -2rem; top: -3rem; border-radius: 50%; background: radial-gradient(circle, rgb(255 25 200 / .24), transparent 68%); }
+.turn-pill { position: relative; max-width: min(100%, 40rem); overflow: hidden; border-color: rgb(170 130 232 / .38) !important; background: linear-gradient(115deg, rgb(24 18 53 / .96), rgb(7 10 29 / .95)); box-shadow: 0 0.875rem 2.375rem rgb(0 0 0 / .42), 0 0 2rem rgb(104 66 188 / .1), inset 0 0.0625rem 0 rgb(255 255 255 / .13) !important; }
+.turn-pill::after { content: ''; position: absolute; right: 10%; bottom: 0; left: 10%; height: 0.0625rem; background: linear-gradient(90deg, transparent, rgb(138 96 226 / .72), rgb(79 181 234 / .58), transparent); box-shadow: 0 0 0.4375rem rgb(123 96 210 / .34); }
 
-@media (max-width: 420px) {
+@media (max-width: 26.25rem) {
   .turn-pill { width: 100%; border-radius: 1.1rem; }
 }

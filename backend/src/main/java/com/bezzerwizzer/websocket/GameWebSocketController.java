@@ -64,6 +64,16 @@ public class GameWebSocketController {
         gameService.handleZwap(code, principal.getName(), action);
     }
 
+    @MessageMapping("/game/{code}/zwap/start")
+    public void startZwap(@DestinationVariable String code, Principal principal) {
+        gameService.beginZwap(code, principal.getName());
+    }
+
+    @MessageMapping("/game/{code}/zwap/cancel")
+    public void cancelZwap(@DestinationVariable String code, Principal principal) {
+        gameService.cancelZwap(code, principal.getName());
+    }
+
     @MessageMapping("/game/{code}/bezzerwizzer")
     public void useBezzerwizzer(@DestinationVariable String code, Principal principal, Map<String, String> payload) {
         gameService.handleBezzerwizzer(code, principal.getName(), payload.get("targetPlayerId"));

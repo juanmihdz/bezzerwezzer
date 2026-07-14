@@ -1,4 +1,4 @@
-export type GamePhase = 'HOME' | 'LOBBY' | 'CATEGORY_ASSIGNMENT' | 'PLAYING' | 'BEZZERWIZZER_WINDOW' | 'ANSWERING' | 'TURN_RESULT' | 'ROUND_END' | 'GAME_OVER';
+export type GamePhase = 'HOME' | 'LOBBY' | 'CATEGORY_ASSIGNMENT' | 'PLAYING' | 'ZWAP' | 'BEZZERWIZZER_WINDOW' | 'ANSWERING' | 'TURN_RESULT' | 'ROUND_END' | 'GAME_OVER';
 
 export interface GameEvent {
   type: string;
@@ -12,6 +12,7 @@ export interface GameStatePayload {
   players: PlayerStatePayload[] | Record<string, PlayerStatePayload>;
   currentTurnPlayerId?: string | null;
   currentAnswerPlayerId?: string | null;
+  pendingZwapPlayerId?: string | null;
   reboundQueue?: string[];
   bezzerwizzerPlayers?: string[];
   bezzerwizzerAnswered?: string[];
@@ -42,6 +43,7 @@ export interface AnswerResult {
   correct: boolean;
   points: number;
   correctAnswer: string;
+  correctOption?: string;
   bezzerwizzerResults?: BezzerwizzerResult[];
 }
 
@@ -57,6 +59,22 @@ export interface ZwapAction {
   targetPlayerId: string;
   mySlotIndex: number;
   targetSlotIndex: number;
+}
+
+export interface ZwapAppliedPayload {
+  playerId: string;
+  playerName: string;
+  sourceCategory: string;
+  targetPlayerId: string;
+  targetPlayerName: string;
+  targetCategory: string;
+}
+
+export interface BezzerwizzerPlayedPayload {
+  playerId: string;
+  playerName: string;
+  targetPlayerId: string;
+  targetPlayerName: string;
 }
 
 export interface CategorySlot {

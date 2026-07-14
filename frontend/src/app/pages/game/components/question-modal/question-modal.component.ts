@@ -27,11 +27,17 @@ export class QuestionModalComponent implements OnChanges {
 
   selectedOption: string | null = null;
   freeTextValue: string = '';
+  private autoSubmittedAtTimerEnd = false;
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['question'] && changes['question'].previousValue?.id !== changes['question'].currentValue?.id) {
       this.selectedOption = null;
       this.freeTextValue = '';
+      this.autoSubmittedAtTimerEnd = false;
+    }
+    if (changes['timer'] && !changes['timer'].firstChange && this.timer === 0 && !this.autoSubmittedAtTimerEnd) {
+      this.autoSubmittedAtTimerEnd = true;
+      this.submitFreeText();
     }
   }
 
@@ -65,7 +71,7 @@ export class QuestionModalComponent implements OnChanges {
     }
     
     if (this.selectedOption === letter) {
-      return 'bg-primary/20 border-primary text-white scale-[1.02] shadow-[0_0_20px_rgba(168,85,247,0.3)]';
+      return 'bg-primary/30 border-primary text-white scale-[1.02] ring-4 ring-primary/35 shadow-[0_0_1.75rem_rgba(168,85,247,0.55)]';
     }
     return this.canChangeAnswer
       ? 'bg-black/30 border-white/10 text-white hover:bg-black/50 hover:border-white/20 hover:scale-[1.01] hover:-translate-y-0.5'

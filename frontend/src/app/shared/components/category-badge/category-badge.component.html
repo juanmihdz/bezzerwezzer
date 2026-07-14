@@ -16,11 +16,16 @@
     class="relative flex items-center gap-3 rounded-2xl glass transition-all duration-300 group overflow-hidden"
     [ngClass]="[
       sizeClasses[size],
-      isHighlighted ? 'shadow-2xl z-10 ring-1 ring-white/25' : 'hover:scale-[1.02]',
+      isHighlighted ? 'shadow-2xl z-10 ring-1 ring-white/25' : '',
     ]"
     [style.borderColor]="color + '40'"
     [style.--category-color]="color"
   >
+    <div
+      class="category-art"
+      aria-hidden="true"
+      [style.backgroundPosition]="categoryArtPosition"
+    ></div>
     <!-- Background Tint -->
     <div
       class="absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20"
@@ -31,7 +36,7 @@
       class="flex items-center justify-center rounded-xl shadow-inner relative z-10"
       [ngClass]="iconSizeClasses[size]"
       [style.backgroundColor]="color"
-      [style.boxShadow]="isHighlighted ? '0 0 15px ' + color + '80' : 'none'"
+      [style.boxShadow]="isHighlighted ? '0 0 0.9375rem ' + color + '80' : 'none'"
     >
       <svg class="category-svg" viewBox="0 0 24 24" aria-hidden="true">
         <path [attr.d]="iconPath"></path>
@@ -52,7 +57,7 @@
       >
         <div class="flex flex-col items-center">
           <span class="text-xs font-bold text-white/70 uppercase tracking-widest mb-0.5">PTS</span>
-          <span class="text-2xl font-black text-white" [style.textShadow]="'0 0 10px ' + color">{{
+          <span class="text-2xl font-black text-white" [style.textShadow]="'0 0 0.625rem ' + color">{{
             pointValue
           }}</span>
         </div>

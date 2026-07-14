@@ -12,12 +12,13 @@ class TacticalTileServiceTest {
 
     @Test
     void zwapSwapsCategoriesButKeepsPointValues() {
-        GameRoom room = roomIn(GamePhase.PLAYING);
+        GameRoom room = roomIn(GamePhase.ZWAP);
         PlayerState current = player("a", category("Historia"), 4);
         PlayerState target = player("b", category("Ciencia"), 1);
         room.addPlayer(current);
         room.addPlayer(target);
         room.getTurnOrder().add("a");
+        room.setPendingZwapPlayerId("a");
 
         service.processZwap(room, "a", "b", 0, 0);
 
@@ -41,14 +42,25 @@ class TacticalTileServiceTest {
 
     @Test
     void tacticalActionsRejectMissingTargetsWithoutLeakingNullPointerExceptions() {
-        GameRoom zwapRoom = roomIn(GamePhase.PLAYING);
+        GameRoom zwapRoom = roomIn(GamePhase.ZWAP);
         zwapRoom.addPlayer(player("a", category("A"), 1));
         zwapRoom.getTurnOrder().add("a");
+        zwapRoom.setPendingZwapPlayerId("a");
         assertThrows(GameException.class, () -> service.processZwap(zwapRoom, "a", null, 0, 0));
 
         GameRoom bezRoom = roomIn(GamePhase.BEZZERWIZZER_WINDOW);
         bezRoom.addPlayer(player("a", category("A"), 1));
         assertThrows(GameException.class, () -> service.processBezzerwizzer(bezRoom, "a", null));
+    }
+
+    @Test
+    void zwapRequiresAnActiveZwapWindowOwnedByTheCurrentPlayer() {
+        GameRoom room = roomIn(GamePhase.ZWAP);
+        room.addPlayer(player("a", category("A"), 1));
+        room.addPlayer(player("b", category("B"), 1));
+        room.getTurnOrder().add("a");
+
+        assertThrows(GameException.class, () -> service.processZwap(room, "a", "b", 0, 0));
     }
 
     private GameRoom roomIn(GamePhase phase) {

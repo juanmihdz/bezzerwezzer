@@ -14,6 +14,7 @@ public class GameState {
     private List<PlayerState> players;
     private String currentTurnPlayerId;
     private String currentAnswerPlayerId;
+    private String pendingZwapPlayerId;
     private List<String> reboundQueue;
     private Set<String> bezzerwizzerPlayers;
     private Set<String> bezzerwizzerAnswered;

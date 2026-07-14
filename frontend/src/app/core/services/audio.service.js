@@ -1,7 +1,27 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import * as i0 from "@angular/core";
 export class AudioService {
     ctx = null;
+    volume = signal(this.restoreVolume(), /* @ts-ignore */
+    ...(ngDevMode ? [{ debugName: "volume" }] : /* istanbul ignore next */ []));
+    muted = signal(this.volume() === 0, /* @ts-ignore */
+    ...(ngDevMode ? [{ debugName: "muted" }] : /* istanbul ignore next */ []));
+    lastAudibleVolume = this.volume() || 0.7;
+    restoreVolume() {
+        const saved = Number(localStorage.getItem('bezzer-audio-volume'));
+        return Number.isFinite(saved) && saved >= 0 && saved <= 1 ? saved : 0.7;
+    }
+    setVolume(value) {
+        const normalized = Math.min(1, Math.max(0, value));
+        this.volume.set(normalized);
+        this.muted.set(normalized === 0);
+        if (normalized > 0)
+            this.lastAudibleVolume = normalized;
+        localStorage.setItem('bezzer-audio-volume', String(normalized));
+    }
+    toggleMute() {
+        this.setVolume(this.muted() ? this.lastAudibleVolume : 0);
+    }
     init() {
         if (!this.ctx) {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -12,6 +32,9 @@ export class AudioService {
     }
     playTone(freq, type, duration, vol = 0.1) {
         try {
+            const outputVolume = vol * this.volume();
+            if (outputVolume <= 0)
+                return;
             this.init();
             if (!this.ctx)
                 return;
@@ -19,7 +42,7 @@ export class AudioService {
             const gain = this.ctx.createGain();
             osc.type = type;
             osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-            gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+            gain.gain.setValueAtTime(outputVolume, this.ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
             osc.connect(gain);
             gain.connect(this.ctx.destination);

@@ -12,8 +12,8 @@
     }
   </h3>
 
-  <div class="category-list flex flex-col gap-2.5 flex-grow min-h-0 overflow-y-auto pr-1">
-    @for (slot of displaySlots; track slot; let i = $index) {
+  <div class="category-list flex w-full min-h-0 flex-grow flex-col gap-2.5 overflow-y-auto overflow-x-clip pr-1 max-[40rem]:overflow-y-visible">
+    @for (slot of displaySlots; track slot.category.id; let i = $index) {
       <div
         class="category-row relative group"
         [class.is-assigning]="isAssigning"
@@ -51,10 +51,10 @@
         <!-- Answered Checkmark Shield -->
         @if (slot.answered) {
           <div
-            class="absolute inset-0 flex items-center justify-center bg-black/45 rounded-2xl z-30 backdrop-blur-[2px]"
+            class="absolute inset-0 flex items-center justify-center bg-black/45 rounded-2xl z-30 backdrop-blur-[0.125rem]"
           >
             <div
-              class="bg-correct/10 border border-correct/30 text-correct px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase flex items-center gap-2 shadow-[0_0_15px_rgba(104,244,200,0.1)]"
+              class="bg-correct/10 border border-correct/30 text-correct px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase flex items-center gap-2 shadow-[0_0_0.9375rem_rgba(104,244,200,0.1)]"
             >
               <span>Resuelto</span>
               <svg class="resolved-check" viewBox="0 0 24 24" aria-hidden="true">

@@ -1,6 +1,6 @@
 <button type="button" class="rules-trigger" [class.rules-trigger--compact]="compact" (click)="open()" aria-haspopup="dialog">
   <span class="rules-trigger__icon" aria-hidden="true">?</span>
-  <span>{{ compact ? 'Ayuda' : 'Cómo se juega' }}</span>
+  <span>{{ compact ? 'Reglas' : 'Cómo se juega' }}</span>
 </button>
 
 @if (isOpen) {
@@ -13,7 +13,7 @@
         <div>
           <span class="rules-kicker">Guía rápida</span>
           <h2 id="rules-title">Domina el tablero</h2>
-          <p>Lo esencial para empezar a jugar en menos de un minuto.</p>
+          <p>Una explicación clara de cada fase para que podáis empezar a jugar sin detener la partida.</p>
         </div>
         <button type="button" class="rules-close" (click)="close()" aria-label="Cerrar ayuda">×</button>
       </header>
@@ -21,32 +21,32 @@
       <div class="rules-modal__content">
         <article class="rule-card rule-card--start">
           <span class="rule-card__number">01</span>
-          <div><h3>Empezar</h3><p>De 2 a 4 jugadores. Todos pulsan «Listo» y el anfitrión inicia.</p></div>
+          <div><h3>Preparar la partida</h3><p>La partida admite de 2 a 4 jugadores. Cuando todos estén marcados como «Listo», el anfitrión puede comenzar.</p></div>
         </article>
         <article class="rule-card rule-card--categories">
           <span class="rule-card__number">02</span>
-          <div><h3>Tus categorías</h3><p>Asigna 1, 2, 3 y 4 puntos una vez. Se juega primero el 1 y luego hasta el 4.</p></div>
+          <div><h3>Ordenar categorías</h3><p>Coloca tus cuatro categorías en los valores 1, 2, 3 y 4. Tu elección queda bloqueada hasta que todos hayan jugado esas cuatro categorías.</p></div>
         </article>
         <article class="rule-card rule-card--turns">
           <span class="rule-card__number">03</span>
-          <div><h3>Un turno</h3><p>Hay 10 s de preparación (se salta si todos pasan) y 30 s para la respuesta principal.</p></div>
+          <div><h3>Rondas y turnos</h3><p>En cada ronda todos responden la categoría del mismo valor: primero 1 punto, después 2, 3 y 4. Antes de cada pregunta hay 10 segundos tácticos; solo se omiten si todos votan «Listo».</p></div>
         </article>
         <article class="rule-card rule-card--tactics">
           <span class="rule-card__number">04</span>
-          <div><h3>Fichas tácticas</h3><p><strong>ZWAP</strong>: durante tu preparación, cambia una categoría pendiente con alguien o reordena dos de las tuyas si te han cambiado una. <strong>BEZZER</strong>: reta al jugador activo y entra en la cola de rebotes.</p></div>
+          <div><h3>Fichas tácticas</h3><p><strong>ZWAP</strong>: durante tu preparación intercambia una categoría que aún no se haya jugado con otro jugador, o cambia de posición dos de las tuyas. <strong>BEZZER</strong>: desafía al jugador del turno y entra en la cola de rebotes si falla.</p></div>
         </article>
         <article class="rule-card rule-card--points">
           <span class="rule-card__number">05</span>
-          <div><h3>Rebotes</h3><p>Si falla el jugador activo, los BEZZER responden en orden (10 s). BEZZER antes de ver la pregunta: +3; después: +1. La ficha solo se gasta si recibes rebote.</p></div>
+          <div><h3>BEZZER y rebotes</h3><p>Si el jugador activo falla, quienes hayan usado BEZZER responden por orden y disponen de 10 segundos. Un BEZZER jugado antes de ver la pregunta vale +3 si aciertas y −1 si fallas; después de verla vale +1. La ficha se gasta cuando recibes el rebote.</p></div>
         </article>
         <article class="rule-card rule-card--goal">
           <span class="rule-card__number">06</span>
-          <div><h3>Ganar</h3><p>Cada punto avanza una casilla. Llega primero a la 30.</p></div>
+          <div><h3>Ganar la partida</h3><p>Las respuestas correctas te hacen avanzar tantas casillas como valga la categoría. Gana quien llegue primero a la casilla 30.</p></div>
         </article>
       </div>
 
       <footer class="rules-modal__footer">
-        <span>Consejo: prepara tu respuesta BEZZER mientras responde el jugador activo.</span>
+        <span>Consejo: si juegas BEZZER, prepara tu respuesta mientras responde el jugador activo.</span>
         <button type="button" class="rules-ready" (click)="close()">¡Entendido!</button>
       </footer>
     </section>

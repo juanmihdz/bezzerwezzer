@@ -40,7 +40,7 @@ export class GameComponent {
   private authService = inject(AuthService);
   readonly playerId = this.authService.playerId;
   private wsService = inject(WebsocketService);
-  private audioService = inject(AudioService);
+  readonly audioService = inject(AudioService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private snackbar = inject(SnackbarService);
@@ -57,6 +57,11 @@ export class GameComponent {
   zwapTargetPlayerId: string | null = null;
   zwapTargetSlotIndex: number | null = null;
   private resultOverlayTimeout?: number;
+
+  setAudioVolume(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.audioService.setVolume(Number(input.value));
+  }
 
   // Temporary state for assignment
   tempAssignment: number[] = [];
@@ -83,14 +88,22 @@ export class GameComponent {
       if (phase === 'ANSWERING') {
         this.hasAnswered = false;
       }
+
+      if (phase === 'CATEGORY_ASSIGNMENT') {
+        // The final answer of a cycle can transition straight into a new
+        // assignment screen, so do not leave its result overlay on top.
+        this.dismissResultOverlay();
+      }
+
+      if (phase === 'PLAYING' && this.showZwapSelector) {
+        this.showZwapSelector = false;
+      }
     });
 
     effect((onCleanup) => {
       this.gameState.turnSequence();
       this.hasAnswered = false;
       this.challengedTurn = -1;
-      this.lastResultPlayerId = '';
-      this.lastResultCorrect = false;
       const slots = this.gameState.myCategories();
       this.tempAssignment = slots.map(slot => slot.pointValue);
       onCleanup(() => undefined);
@@ -179,6 +192,11 @@ export class GameComponent {
     return p ? p.username : '';
   }
 
+  get pendingZwapPlayerName(): string {
+    const playerId = this.gameState.pendingZwapPlayerId();
+    return this.gameState.players().find(player => player.playerId === playerId)?.username ?? 'Un jugador';
+  }
+
   get currentTurnPlayerColor(): string {
     const id = this.gameState.currentTurnPlayerId();
     const p = this.gameState.players().find(x => x.playerId === id);
@@ -206,6 +224,7 @@ export class GameComponent {
     switch(this.gameState.gamePhase()) {
       case 'CATEGORY_ASSIGNMENT': return 'ASIGNANDO PUNTOS';
       case 'PLAYING': return this.gameState.isMyTurn() ? 'PREPARA TU JUGADA' : 'PREPARANDO JUGADA';
+      case 'ZWAP': return 'ZWAP EN CURSO';
       case 'BEZZERWIZZER_WINDOW': return '¡BEZZERWIZZER!';
       case 'ANSWERING': return 'RESPONDIENDO';
       default: return 'RONDA ' + this.gameState.currentRound();
@@ -263,7 +282,13 @@ export class GameComponent {
     this.zwapSourceIndex = null;
     this.zwapTargetPlayerId = null;
     this.zwapTargetSlotIndex = null;
+    this.wsService.send(`/app/game/${this.gameState.roomCode()}/zwap/start`, {});
     this.showZwapSelector = true;
+  }
+
+  cancelZwap(): void {
+    this.showZwapSelector = false;
+    this.wsService.send(`/app/game/${this.gameState.roomCode()}/zwap/cancel`, {});
   }
 
   getMyPlayer(): PlayerInfo | undefined {
@@ -305,7 +330,6 @@ export class GameComponent {
     };
     this.wsService.send(`/app/game/${this.gameState.roomCode()}/zwap`, action);
     this.showZwapSelector = false;
-    this.snackbar.show('ZWAP aplicado', 'info');
   }
 
   onBezzerwizzerClick() {
@@ -324,16 +348,36 @@ export class GameComponent {
     this.lastResultCorrect = result.correct;
     this.lastResultPlayerId = result.playerId;
     this.lastResultPoints = result.points;
-    this.lastResultAnswerText = result.correctAnswer || 'Sin respuesta';
+    this.lastResultAnswerText = this.resolveCorrectAnswerText(result);
     this.bezzerwizzerResults = result.bezzerwizzerResults ?? [];
     this.showResultOverlay = true;
-    this.resultOverlayTimeout = window.setTimeout(() => this.showResultOverlay = false, 1600);
+    this.resultOverlayTimeout = window.setTimeout(
+      () => this.clearAnswerResult(),
+      result.correct ? 1600 : 4000
+    );
     result.correct ? this.audioService.playCorrect() : this.audioService.playIncorrect();
+  }
+
+  private resolveCorrectAnswerText(result: AnswerResult): string {
+    const answer = result.correctAnswer?.trim();
+    const optionKey = result.correctOption?.trim().toUpperCase()
+      || (answer?.match(/^[A-D]$/i) ? answer.toUpperCase() : undefined);
+    if (optionKey && this.gameState.currentQuestion()?.options) {
+      const index = optionKey.charCodeAt(0) - 65;
+      return this.gameState.currentQuestion()?.options?.[index] || answer || optionKey;
+    }
+    return answer || 'Sin respuesta';
   }
 
   private dismissResultOverlay(): void {
     window.clearTimeout(this.resultOverlayTimeout);
+    this.clearAnswerResult();
+  }
+
+  private clearAnswerResult(): void {
     this.showResultOverlay = false;
+    this.lastResultPlayerId = '';
+    this.lastResultCorrect = false;
   }
 
   getPlayerName(id: string): string {

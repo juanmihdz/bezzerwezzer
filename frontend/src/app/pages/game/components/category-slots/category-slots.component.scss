@@ -1,29 +1,34 @@
 :host { display: block; height: 100%; min-height: 0; }
-:host > div { position: relative; overflow: hidden; border: 1px solid rgb(191 137 255 / .28); background: linear-gradient(155deg, rgb(24 17 53 / .88), rgb(5 7 23 / .84)); box-shadow: 0 24px 54px rgb(0 0 0 / .34), inset 0 1px 0 rgb(255 255 255 / .10), inset 0 0 40px rgb(123 44 255 / .04); }
+:host > div { position: relative; overflow: hidden; border: 0.0625rem solid rgb(191 137 255 / .32); background: radial-gradient(circle at 90% 4%, rgb(0 217 255 / .09), transparent 31%), linear-gradient(155deg, rgb(24 17 53 / .91), rgb(5 7 23 / .88)); box-shadow: 0 1.625rem 3.625rem rgb(0 0 0 / .4), 0 0 1.875rem rgb(123 44 255 / .07), inset 0 0.0625rem 0 rgb(255 255 255 / .11), inset 0 0 2.5rem rgb(123 44 255 / .045); }
 :host > div::after { content: ''; position: absolute; width: 12rem; height: 12rem; right: -5rem; top: -5rem; border-radius: 50%; background: radial-gradient(circle, rgb(0 217 255 / .11), transparent 68%); pointer-events: none; }
 .category-list { scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / .18) transparent; }
 .category-heading { display: inline-flex; align-items: center; gap: .55rem; }
 .category-heading svg { width: 1.3rem; height: 1.3rem; fill: none; stroke: var(--color-accent); stroke-width: 1.8; }
 .resolved-check { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
-.assignment-chip { padding: .4rem .7rem; border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent); border-radius: 999px; color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 12%, transparent); font-size: .65rem; font-weight: 800; letter-spacing: .08em; }
-.category-row { border-radius: 1rem; transition: opacity .2s ease, transform .2s ease, box-shadow .2s ease; outline: none; }
-.category-row::after { content: ''; position: absolute; inset: 1px; border-radius: inherit; border: 1px solid rgb(255 255 255 / .045); pointer-events: none; }
+.assignment-chip { padding: .4rem .7rem; border: 0.0625rem solid color-mix(in srgb, var(--color-accent) 30%, transparent); border-radius: 62.4375rem; color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 12%, transparent); font-size: .65rem; font-weight: 800; letter-spacing: .08em; }
+.category-row { border-radius: 1rem; transition: opacity .2s ease, transform .2s ease, box-shadow .2s ease, filter .2s ease; outline: none; }
+.category-row:hover { filter: brightness(1.08); }
+.category-row::after { content: ''; position: absolute; inset: 0.0625rem; border-radius: inherit; border: 0.0625rem solid rgb(255 255 255 / .045); pointer-events: none; }
 .category-row.is-assigning { cursor: grab; touch-action: pan-y; }
 .category-row.is-assigning:active, .category-row.is-dragging { cursor: grabbing; }
-.category-row.is-assigning:hover, .category-row.is-assigning:focus-visible { transform: translateY(-2px); box-shadow: 0 10px 25px rgb(0 0 0 / .22); }
-.category-row.is-assigning:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+.category-row.is-assigning:hover, .category-row.is-assigning:focus-visible { transform: translateY(-0.125rem); box-shadow: 0 0.625rem 1.5625rem rgb(0 0 0 / .22); }
+.category-row.is-assigning:focus-visible { outline: 0.125rem solid var(--color-accent); outline-offset: 0.1875rem; }
 .category-row.is-dragging { opacity: .38; transform: scale(.98); }
-.category-row.is-drop-target { transform: translateY(-2px) scale(1.015); box-shadow: 0 0 0 2px var(--color-accent), 0 0 24px color-mix(in srgb, var(--color-accent) 30%, transparent); }
+.category-row.is-drop-target { transform: translateY(-0.125rem); box-shadow: inset 0 0 0 0.125rem var(--color-accent), 0 0 1.5rem color-mix(in srgb, var(--color-accent) 30%, transparent); }
 
-.assignment-hint { position: fixed; z-index: 70; top: 50%; left: 50%; width: min(92vw, 30rem); transform: translate(-50%, -50%); display: flex; align-items: center; gap: 1rem; padding: 1rem 1.15rem; border: 1px solid rgb(255 255 255 / .16); border-radius: 1.25rem; background: linear-gradient(145deg, rgb(31 25 51 / .96), rgb(12 9 24 / .96)); box-shadow: 0 24px 70px rgb(0 0 0 / .6), 0 0 36px color-mix(in srgb, var(--color-accent) 15%, transparent); color: white; animation: hint-in-out 5.7s ease both; pointer-events: none; }
+.assignment-hint { position: fixed; z-index: 70; top: 50%; left: 50%; width: min(92vw, 30rem); transform: translate(-50%, -50%); display: flex; align-items: center; gap: 1rem; padding: 1rem 1.15rem; border: 0.0625rem solid rgb(255 255 255 / .16); border-radius: 1.25rem; background: linear-gradient(145deg, rgb(31 25 51 / .96), rgb(12 9 24 / .96)); box-shadow: 0 1.5rem 4.375rem rgb(0 0 0 / .6), 0 0 2.25rem color-mix(in srgb, var(--color-accent) 15%, transparent); color: white; animation: hint-in-out 5.7s ease both; pointer-events: none; }
 .assignment-hint > span:last-child { display: flex; flex-direction: column; gap: .2rem; color: rgb(255 255 255 / .7); font-size: .84rem; line-height: 1.35; }
 .assignment-hint strong { color: white; font-size: 1rem; }
-.hint-icon { flex: 0 0 auto; display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: .9rem; color: white; background: linear-gradient(145deg, var(--color-primary), var(--color-accent)); box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 45%, transparent); }
+.hint-icon { flex: 0 0 auto; display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: .9rem; color: white; background: linear-gradient(145deg, var(--color-primary), var(--color-accent)); box-shadow: 0 0 1.25rem color-mix(in srgb, var(--color-primary) 45%, transparent); }
 .hint-icon svg { width: 1.6rem; height: 1.6rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 @keyframes hint-in-out { 0% { opacity: 0; transform: translate(-50%, -44%) scale(.94); } 12%, 82% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -54%) scale(.98); } }
 
 @media (prefers-reduced-motion: reduce) { .assignment-hint { animation: none; } .category-row { transition: none; } }
 
-@media (max-width: 1023px) {
-  :host > div { min-height: 22rem; }
+@media (max-width: 63.9375rem) {
+  :host > div { min-height: clamp(18rem, 58dvh, 22rem); }
+}
+
+@media (max-width: 40rem) {
+  :host > div { min-height: 0; }
 }

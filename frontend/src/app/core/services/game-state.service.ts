@@ -1,15 +1,19 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { AnswerResult, BezzerwizzerResult, GamePhase, GameEvent, GameStatePayload, PlayerEventPayload, PlayerInfo, PlayerStatePayload, CategorySlot, TacticalTiles, TurnStartPayload } from '../../shared/models/game.model';
+import { AnswerResult, BezzerwizzerResult, BezzerwizzerPlayedPayload, GamePhase, GameEvent, GameStatePayload, PlayerEventPayload, PlayerInfo, PlayerStatePayload, CategorySlot, TacticalTiles, TurnStartPayload, ZwapAppliedPayload } from '../../shared/models/game.model';
 import { Question } from '../../shared/models/player.model';
 import { AuthService } from './auth.service';
 import { WebsocketService } from './websocket.service';
+import { SnackbarService } from './snackbar.service';
+import { AudioService } from './audio.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GameStateService {
   private authService = inject(AuthService);
+  private snackbar = inject(SnackbarService);
+  private audioService = inject(AudioService);
 
   // Core State Signals
   gamePhase = signal<GamePhase>('HOME');
@@ -23,6 +27,7 @@ export class GameStateService {
   boardPositions = signal<Record<string, number>>({});
   currentTurnPlayerId = signal<string>('');
   currentAnswerPlayerId = signal<string>('');
+  pendingZwapPlayerId = signal<string>('');
   currentRound = signal<number>(0);
   timer = signal<number>(30);
   timerTotal = signal<number>(30);
@@ -34,6 +39,8 @@ export class GameStateService {
   reboundQueue = signal<string[]>([]);
   bezzerwizzerPlayers = signal<string[]>([]);
   bezzerwizzerAnswered = signal<string[]>([]);
+  tacticalAnnouncement = signal<string | null>(null);
+  private tacticalAnnouncementTimeout?: number;
   
   // Computed State
   isMyTurn = computed(() => this.currentTurnPlayerId() === this.authService.playerId());
@@ -103,6 +110,27 @@ export class GameStateService {
         this.updateFromGameState(event.payload as GameStatePayload);
         break;
 
+      case 'ZWAP_APPLIED': {
+        const zwap = event.payload as ZwapAppliedPayload;
+        const target = zwap.playerId === zwap.targetPlayerId
+          ? 'sus propias categorías'
+          : `las categorías de ${zwap.targetPlayerName}`;
+        const message = `${zwap.playerName} ha intercambiado ${zwap.sourceCategory} por ${zwap.targetCategory} (${target})`;
+        this.snackbar.show(message, 'info');
+        this.showTacticalAnnouncement(`↔ ZWAP · ${message}`);
+        this.audioService.playZwap();
+        break;
+      }
+
+      case 'BEZZERWIZZER_PLAYED': {
+        const bezzer = event.payload as BezzerwizzerPlayedPayload;
+        const message = `${bezzer.playerName} reta a ${bezzer.targetPlayerName}`;
+        this.snackbar.show(`¡BEZZERWIZZER! ${message}`, 'warning');
+        this.showTacticalAnnouncement(`★ BEZZERWIZZER · ${message}`);
+        this.audioService.playBezzerwizzer();
+        break;
+      }
+
       case 'TURN_READY': {
         const turn = event.payload as PlayerEventPayload;
         this.currentTurnPlayerId.set(turn.playerId);
@@ -145,9 +173,9 @@ export class GameStateService {
       case 'ANSWER_RESULT': {
         const result = event.payload as AnswerResult;
         this.stopTimer();
-        // Rebound results can arrive immediately after a failed answer. Keep
-        // them in the board state, but do not restart the main result overlay.
-        if (result.playerId === this.currentTurnPlayerId()) {
+        // Show the result for whoever is answering now, including a player
+        // who receives a Bezzerwizzer rebound.
+        if (result.playerId === this.currentAnswerPlayerId()) {
           this.lastAnswerResult.set(result);
         }
         this.players.update(players => players.map(player => player.playerId === result.playerId
@@ -213,6 +241,7 @@ export class GameStateService {
     
     this.currentTurnPlayerId.set(state.currentTurnPlayerId ?? '');
     this.currentAnswerPlayerId.set(state.currentAnswerPlayerId ?? state.currentTurnPlayerId ?? '');
+    this.pendingZwapPlayerId.set(state.pendingZwapPlayerId ?? '');
     this.reboundQueue.set(state.reboundQueue ?? []);
     this.bezzerwizzerPlayers.set(state.bezzerwizzerPlayers ?? []);
     this.bezzerwizzerAnswered.set(state.bezzerwizzerAnswered ?? []);
@@ -244,6 +273,15 @@ export class GameStateService {
     }
   }
 
+  private showTacticalAnnouncement(message: string): void {
+    window.clearTimeout(this.tacticalAnnouncementTimeout);
+    this.tacticalAnnouncement.set(message);
+    this.tacticalAnnouncementTimeout = window.setTimeout(
+      () => this.tacticalAnnouncement.set(null),
+      3500
+    );
+  }
+
   updateMyCategories(slots: CategorySlot[]) {
     this.myCategories.set(slots);
   }
@@ -267,6 +305,8 @@ export class GameStateService {
     this.reboundQueue.set([]);
     this.bezzerwizzerPlayers.set([]);
     this.bezzerwizzerAnswered.set([]);
+    this.tacticalAnnouncement.set(null);
+    window.clearTimeout(this.tacticalAnnouncementTimeout);
     this.stopTimer();
   }
 }

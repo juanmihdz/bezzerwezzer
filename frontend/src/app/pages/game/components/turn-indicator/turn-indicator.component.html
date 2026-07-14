@@ -3,13 +3,13 @@
     <div
       class="turn-pill glass px-4 sm:px-7 py-3 sm:py-3.5 rounded-full flex items-center gap-3 sm:gap-5 animate-slide-up shadow-lg border border-white/10"
       [style.borderColor]="isMyTurn ? 'oklch(0.58 0.28 290 / 0.4)' : 'rgba(255,255,255,0.08)'"
-      [style.boxShadow]="isMyTurn ? '0 0 25px oklch(0.58 0.28 290 / 0.15)' : 'none'"
+      [style.boxShadow]="isMyTurn ? '0 0 1.5625rem oklch(0.58 0.28 290 / 0.15)' : 'none'"
     >
       <!-- Pulsing LED indicator in player color -->
       <div
         class="relative w-4.5 h-4.5 rounded-full shadow-inner border border-white/20"
         [style.backgroundColor]="playerColor"
-        [style.boxShadow]="'0 0 12px ' + playerColor"
+        [style.boxShadow]="'0 0 0.75rem ' + playerColor"
       >
         <div class="absolute inset-0 bg-inherit rounded-full animate-ping opacity-75"></div>
       </div>
