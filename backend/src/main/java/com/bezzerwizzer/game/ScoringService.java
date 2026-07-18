@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.text.Normalizer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Locale;
@@ -80,6 +81,17 @@ public class ScoringService {
         return option == null ? "" : option;
     }
 
+    /** Returns a player answer ready for display, expanding A-D into its text. */
+    public String answerText(Question question, String answer) {
+        if (answer == null || answer.isBlank()) return "";
+        if (question == null || question.getQuestionType() != QuestionType.MULTIPLE_CHOICE) {
+            return answer;
+        }
+        String key = optionKey(question, answer);
+        String option = optionText(question, key);
+        return key != null && option != null ? key + " · " + option : answer;
+    }
+
     private String optionKey(Question question, String value) {
         if (value == null || value.isBlank()) return null;
         String normalized = value.trim();
@@ -88,9 +100,16 @@ public class ScoringService {
         }
         for (String key : new String[]{"A", "B", "C", "D"}) {
             String option = optionText(question, key);
-            if (option != null && option.trim().equalsIgnoreCase(normalized)) return key;
+            if (option != null && normalizeOptionText(option).equals(normalizeOptionText(normalized))) return key;
         }
         return null;
+    }
+
+    private String normalizeOptionText(String value) {
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .trim()
+                .toLowerCase(Locale.ROOT);
     }
 
     private String optionText(Question question, String key) {
@@ -114,7 +133,7 @@ public class ScoringService {
         }
     }
 
-    public void movePlayer(PlayerState player, int spaces) {
+    public void movePlayer(GameRoom room, PlayerState player, int spaces) {
         int currentPos = player.getBoardPosition();
         int newPos = currentPos + spaces;
 
@@ -122,17 +141,22 @@ public class ScoringService {
         if (newPos < 0) newPos = 0;
 
         // Cap at board size
-        if (newPos >= GameRoom.BOARD_SIZE) {
-            newPos = GameRoom.BOARD_SIZE;
+        if (newPos >= room.getWinningPosition()) {
+            newPos = room.getWinningPosition();
         }
 
         player.setBoardPosition(newPos);
         player.setRoundScore(player.getRoundScore() + spaces);
     }
 
+    /** Kept for callers that use the standard 30-cell board. */
+    public void movePlayer(PlayerState player, int spaces) {
+        movePlayer(new GameRoom(), player, spaces);
+    }
+
     public Optional<String> checkWinCondition(GameRoom room) {
         return room.getPlayers().values().stream()
-                .filter(p -> p.getBoardPosition() >= GameRoom.BOARD_SIZE)
+                .filter(p -> p.getBoardPosition() >= room.getWinningPosition())
                 .max((p1, p2) -> Integer.compare(p1.getBoardPosition(), p2.getBoardPosition()))
                 .map(PlayerState::getPlayerId);
     }

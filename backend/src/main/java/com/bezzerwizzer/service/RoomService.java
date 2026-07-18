@@ -86,6 +86,21 @@ public class RoomService {
         return room;
     }
 
+    public synchronized GameRoom setWinningPosition(String roomCode, String playerId, int winningPosition) {
+        GameRoom room = getRoom(roomCode);
+        if (room.getPhase() != GamePhase.LOBBY) {
+            throw new IllegalStateException("La casilla final solo se puede configurar en la sala de espera");
+        }
+        if (!playerId.equals(room.getHostPlayerId())) {
+            throw new IllegalStateException("Solo el anfitrión puede configurar la casilla final");
+        }
+        if (winningPosition < 10 || winningPosition > GameRoom.BOARD_SIZE) {
+            throw new IllegalArgumentException("La casilla final debe estar entre 10 y " + GameRoom.BOARD_SIZE);
+        }
+        room.setWinningPosition(winningPosition);
+        return room;
+    }
+
     public void removePlayerFromRoom(String roomCode, String playerId) {
         GameRoom room = getRoom(roomCode);
         room.removePlayer(playerId);

@@ -25,6 +25,7 @@ com/bezzerwizzer/game/GameState$CategoryInfo$CategoryInfoBuilder.class
 com/bezzerwizzer/game/PlayerState.class
 com/bezzerwizzer/websocket/dto/AnswerDTO.class
 com/bezzerwizzer/game/AnswerValidator.class
+com/bezzerwizzer/model/enums/QuestionDifficulty.class
 com/bezzerwizzer/config/WebSocketAuthInterceptor.class
 com/bezzerwizzer/exception/GlobalExceptionHandler.class
 com/bezzerwizzer/game/ScoringService.class

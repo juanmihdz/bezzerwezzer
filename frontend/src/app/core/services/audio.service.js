@@ -7,6 +7,11 @@ export class AudioService {
     muted = signal(this.volume() === 0, /* @ts-ignore */
     ...(ngDevMode ? [{ debugName: "muted" }] : /* istanbul ignore next */ []));
     lastAudibleVolume = this.volume() || 0.7;
+    constructor() {
+        // Unlock Web Audio from the first user gesture so tactical events received
+        // later through WebSocket can be heard by spectators as well.
+        document.addEventListener('pointerdown', () => this.init(), { once: true });
+    }
     restoreVolume() {
         const saved = Number(localStorage.getItem('bezzer-audio-volume'));
         return Number.isFinite(saved) && saved >= 0 && saved <= 1 ? saved : 0.7;
@@ -67,6 +72,16 @@ export class AudioService {
     playNotification() {
         this.playTone(500, 'sine', 0.2);
     }
+    playBezzerwizzer() {
+        this.playTone(180, 'sawtooth', 0.12, 0.16);
+        setTimeout(() => this.playTone(320, 'square', 0.16, 0.12), 90);
+        setTimeout(() => this.playTone(520, 'square', 0.25, 0.1), 190);
+    }
+    playZwap() {
+        this.playTone(720, 'sine', 0.11, 0.11);
+        setTimeout(() => this.playTone(420, 'triangle', 0.16, 0.12), 85);
+        setTimeout(() => this.playTone(860, 'sine', 0.22, 0.1), 170);
+    }
     static ɵfac = function AudioService_Factory(__ngFactoryType__) { return new (__ngFactoryType__ || AudioService)(); };
     static ɵprov = /*@__PURE__*/ i0.ɵɵdefineInjectable({ token: AudioService, factory: AudioService.ɵfac, providedIn: 'root' });
 }
@@ -75,4 +90,4 @@ export class AudioService {
         args: [{
                 providedIn: 'root'
             }]
-    }], null, null); })();
+    }], () => [], null); })();

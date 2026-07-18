@@ -2,9 +2,11 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { AuthService } from './auth.service';
 import { WebsocketService } from './websocket.service';
+import { AudioService } from './audio.service';
 import * as i0 from "@angular/core";
 export class GameStateService {
     authService = inject(AuthService);
+    audioService = inject(AudioService);
     // Core State Signals
     gamePhase = signal('HOME', /* @ts-ignore */
     ...(ngDevMode ? [{ debugName: "gamePhase" }] : /* istanbul ignore next */ []));
@@ -14,6 +16,8 @@ export class GameStateService {
     ...(ngDevMode ? [{ debugName: "players" }] : /* istanbul ignore next */ []));
     hostPlayerId = signal('', /* @ts-ignore */
     ...(ngDevMode ? [{ debugName: "hostPlayerId" }] : /* istanbul ignore next */ []));
+    winningPosition = signal(30, /* @ts-ignore */
+    ...(ngDevMode ? [{ debugName: "winningPosition" }] : /* istanbul ignore next */ []));
     // Game Play Signals
     currentQuestion = signal(null, /* @ts-ignore */
     ...(ngDevMode ? [{ debugName: "currentQuestion" }] : /* istanbul ignore next */ []));
@@ -25,6 +29,8 @@ export class GameStateService {
     ...(ngDevMode ? [{ debugName: "currentTurnPlayerId" }] : /* istanbul ignore next */ []));
     currentAnswerPlayerId = signal('', /* @ts-ignore */
     ...(ngDevMode ? [{ debugName: "currentAnswerPlayerId" }] : /* istanbul ignore next */ []));
+    pendingZwapPlayerId = signal('', /* @ts-ignore */
+    ...(ngDevMode ? [{ debugName: "pendingZwapPlayerId" }] : /* istanbul ignore next */ []));
     currentRound = signal(0, /* @ts-ignore */
     ...(ngDevMode ? [{ debugName: "currentRound" }] : /* istanbul ignore next */ []));
     timer = signal(30, /* @ts-ignore */
@@ -35,6 +41,8 @@ export class GameStateService {
     ...(ngDevMode ? [{ debugName: "myTacticalTiles" }] : /* istanbul ignore next */ []));
     lastAnswerResult = signal(null, /* @ts-ignore */
     ...(ngDevMode ? [{ debugName: "lastAnswerResult" }] : /* istanbul ignore next */ []));
+    answerResults = signal([], /* @ts-ignore */
+    ...(ngDevMode ? [{ debugName: "answerResults" }] : /* istanbul ignore next */ []));
     turnSequence = signal(0, /* @ts-ignore */
     ...(ngDevMode ? [{ debugName: "turnSequence" }] : /* istanbul ignore next */ []));
     bezzerwizzerResults = signal([], /* @ts-ignore */
@@ -47,6 +55,9 @@ export class GameStateService {
     ...(ngDevMode ? [{ debugName: "bezzerwizzerPlayers" }] : /* istanbul ignore next */ []));
     bezzerwizzerAnswered = signal([], /* @ts-ignore */
     ...(ngDevMode ? [{ debugName: "bezzerwizzerAnswered" }] : /* istanbul ignore next */ []));
+    tacticalAnnouncement = signal(null, /* @ts-ignore */
+    ...(ngDevMode ? [{ debugName: "tacticalAnnouncement" }] : /* istanbul ignore next */ []));
+    tacticalAnnouncementTimeout;
     // Computed State
     isMyTurn = computed(() => this.currentTurnPlayerId() === this.authService.playerId(), /* @ts-ignore */
     ...(ngDevMode ? [{ debugName: "isMyTurn" }] : /* istanbul ignore next */ []));
@@ -65,6 +76,7 @@ export class GameStateService {
     canPlayBezzerwizzer = computed(() => {
         return this.myTacticalTiles().bezzerwizzer > 0 &&
             !this.isMyTurn() &&
+            !this.bezzerwizzerPlayers().includes(this.authService.playerId()) &&
             (this.gamePhase() === 'PLAYING' ||
                 (this.gamePhase() === 'ANSWERING' && this.currentAnswerPlayerId() === this.currentTurnPlayerId()));
     }, /* @ts-ignore */
@@ -97,6 +109,14 @@ export class GameStateService {
         }));
         console.log('Subscribed to room:', roomCode, this.roomSubscription);
     }
+    initializeLobby(room, assumeCurrentPlayerIsHost = false) {
+        const snapshot = room;
+        this.updateRoom({
+            ...snapshot,
+            hostPlayerId: snapshot.hostPlayerId || (assumeCurrentPlayerIsHost ? this.authService.playerId() : '')
+        });
+        this.gamePhase.set('LOBBY');
+    }
     handleGameEvent(event) {
         console.log('Game Event Received:', event.type, event.payload);
         switch (event.type) {
@@ -110,6 +130,22 @@ export class GameStateService {
             case 'GAME_STATE':
                 this.updateFromGameState(event.payload);
                 break;
+            case 'ZWAP_APPLIED': {
+                const zwap = event.payload;
+                const message = zwap.playerId === zwap.targetPlayerId
+                    ? `${zwap.playerName} ha reordenado sus categorías: «${zwap.sourceCategory}» y «${zwap.targetCategory}».`
+                    : `${zwap.playerName} ha usado ZWAP: cambió «${zwap.sourceCategory}» por «${zwap.targetCategory}» de ${zwap.targetPlayerName}.`;
+                this.showTacticalAnnouncement(`↔ ZWAP · ${message}`, 6000);
+                this.audioService.playZwap();
+                break;
+            }
+            case 'BEZZERWIZZER_PLAYED': {
+                const bezzer = event.payload;
+                const message = `${bezzer.playerName} reta a ${bezzer.targetPlayerName}`;
+                this.showTacticalAnnouncement(`★ BEZZERWIZZER · ${message}`);
+                this.audioService.playBezzerwizzer();
+                break;
+            }
             case 'TURN_READY': {
                 const turn = event.payload;
                 this.currentTurnPlayerId.set(turn.playerId);
@@ -118,6 +154,7 @@ export class GameStateService {
                 this.lastAnswerResult.set(null);
                 this.gamePhase.set('PLAYING');
                 this.preparationSkipVotes.set([]);
+                this.turnSequence.update(value => value + 1);
                 this.startTimer(turn.timeLimit ?? 10);
                 this.timerTotal.set(turn.timeLimit ?? 10);
                 break;
@@ -131,7 +168,7 @@ export class GameStateService {
                 this.timerTotal.set(turn.timeLimit ?? 30);
                 this.gamePhase.set('ANSWERING');
                 this.bezzerwizzerResults.set([]);
-                this.turnSequence.update(value => value + 1);
+                this.answerResults.set([]);
                 break;
             }
             case 'ANSWERING_STARTED': {
@@ -147,11 +184,11 @@ export class GameStateService {
             case 'ANSWER_RESULT': {
                 const result = event.payload;
                 this.stopTimer();
-                // Rebound results can arrive immediately after a failed answer. Keep
-                // them in the board state, but do not restart the main result overlay.
-                if (result.playerId === this.currentTurnPlayerId()) {
-                    this.lastAnswerResult.set(result);
-                }
+                this.answerResults.update(results => [...results, result]);
+                // The server's result is authoritative. In particular, a timeout can
+                // advance the rebound state before the browser processes this event,
+                // so do not discard it when the local active-player signal changed.
+                this.lastAnswerResult.set(result);
                 this.players.update(players => players.map(player => player.playerId === result.playerId
                     ? { ...player, boardPosition: Math.max(0, player.boardPosition + result.points) }
                     : player));
@@ -177,9 +214,13 @@ export class GameStateService {
             : [];
         this.players.set(playersArray);
         this.hostPlayerId.set(room.hostPlayerId || '');
+        this.winningPosition.set(room.winningPosition ?? 30);
     }
     updateFromGameState(state) {
         this.roomCode.set(state.roomCode);
+        if (state.hostPlayerId) {
+            this.hostPlayerId.set(state.hostPlayerId);
+        }
         this.gamePhase.set(state.phase);
         if (state.players) {
             let playersArray = [];
@@ -209,10 +250,12 @@ export class GameStateService {
         }
         this.currentTurnPlayerId.set(state.currentTurnPlayerId ?? '');
         this.currentAnswerPlayerId.set(state.currentAnswerPlayerId ?? state.currentTurnPlayerId ?? '');
+        this.pendingZwapPlayerId.set(state.pendingZwapPlayerId ?? '');
         this.reboundQueue.set(state.reboundQueue ?? []);
         this.bezzerwizzerPlayers.set(state.bezzerwizzerPlayers ?? []);
         this.bezzerwizzerAnswered.set(state.bezzerwizzerAnswered ?? []);
         this.currentRound.set(state.round);
+        this.winningPosition.set(state.winningPosition ?? this.winningPosition());
         this.preparationSkipVotes.set(state.preparationSkipVotes ?? []);
         if (state.timer && state.timer > 0) {
             this.startTimer(state.timer);
@@ -238,6 +281,11 @@ export class GameStateService {
             this.timerInterval = null;
         }
     }
+    showTacticalAnnouncement(message, duration = 3500) {
+        window.clearTimeout(this.tacticalAnnouncementTimeout);
+        this.tacticalAnnouncement.set(message);
+        this.tacticalAnnouncementTimeout = window.setTimeout(() => this.tacticalAnnouncement.set(null), duration);
+    }
     updateMyCategories(slots) {
         this.myCategories.set(slots);
     }
@@ -248,18 +296,22 @@ export class GameStateService {
         this.roomCode.set('');
         this.players.set([]);
         this.hostPlayerId.set('');
+        this.winningPosition.set(30);
         this.currentQuestion.set(null);
         this.myCategories.set([]);
         this.currentTurnPlayerId.set('');
         this.currentAnswerPlayerId.set('');
         this.currentRound.set(0);
         this.lastAnswerResult.set(null);
+        this.answerResults.set([]);
         this.turnSequence.set(0);
         this.bezzerwizzerResults.set([]);
         this.preparationSkipVotes.set([]);
         this.reboundQueue.set([]);
         this.bezzerwizzerPlayers.set([]);
         this.bezzerwizzerAnswered.set([]);
+        this.tacticalAnnouncement.set(null);
+        window.clearTimeout(this.tacticalAnnouncementTimeout);
         this.stopTimer();
     }
     static ɵfac = function GameStateService_Factory(__ngFactoryType__) { return new (__ngFactoryType__ || GameStateService)(); };

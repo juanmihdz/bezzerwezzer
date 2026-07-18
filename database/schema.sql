@@ -2,6 +2,8 @@
 -- Bezzerwizzer Online – Database Schema (PostgreSQL 18)
 -- ============================================================
 
+CREATE TYPE question_difficulty AS ENUM ('MEDIUM', 'HARD');
+
 -- Categories table
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
@@ -20,21 +22,20 @@ CREATE TABLE questions (
     question_type VARCHAR(20) NOT NULL DEFAULT 'MULTIPLE_CHOICE',
 
     -- Fields for MULTIPLE_CHOICE
-    option_a VARCHAR(255),
-    option_b VARCHAR(255),
-    option_c VARCHAR(255),
-    option_d VARCHAR(255),
+    option_a TEXT,
+    option_b TEXT,
+    option_c TEXT,
+    option_d TEXT,
     correct_option VARCHAR(1),
 
     -- Fields for FREE_TEXT
-    correct_answer VARCHAR(255),
+    correct_answer TEXT,
     answer_aliases TEXT[],
 
-    difficulty INTEGER NOT NULL DEFAULT 1,
+    difficulty question_difficulty NOT NULL DEFAULT 'HARD',
     locale VARCHAR(5) NOT NULL DEFAULT 'es',
 
     CONSTRAINT chk_question_type CHECK (question_type IN ('MULTIPLE_CHOICE', 'FREE_TEXT')),
-    CONSTRAINT chk_difficulty CHECK (difficulty BETWEEN 1 AND 3),
     CONSTRAINT valid_mc CHECK (
         question_type != 'MULTIPLE_CHOICE' OR
         (option_a IS NOT NULL AND option_b IS NOT NULL AND
@@ -49,4 +50,6 @@ CREATE TABLE questions (
 -- Optimized indexes
 CREATE INDEX idx_questions_category_locale ON questions(category_id, locale);
 CREATE INDEX idx_questions_type ON questions(question_type);
+CREATE UNIQUE INDEX idx_questions_unique_text_locale
+    ON questions(locale, lower(question_text));
 CREATE INDEX idx_categories_locale ON categories(locale);

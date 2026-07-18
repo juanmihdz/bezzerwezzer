@@ -7,7 +7,9 @@ import { map, take, timeout } from 'rxjs/operators';
   providedIn: 'root'
 })
 export class WebsocketService {
+  private readonly mobileConnectionTimeoutMs = 45_000;
   private rxStomp: RxStomp;
+  private connectedToken = '';
   connectionStatus = signal<'CONNECTED' | 'DISCONNECTED' | 'CONNECTING'>('DISCONNECTED');
 
   constructor() {
@@ -24,14 +26,22 @@ export class WebsocketService {
   }
 
   async connect(token: string): Promise<void> {
-    if (this.connectionStatus() === 'CONNECTED') {
+    if (this.connectionStatus() === 'CONNECTED' && this.connectedToken === token) {
       return;
+    }
+
+    // A new guest login gets a new identity. Reusing a socket authenticated
+    // with the previous token would make the server create/join rooms as the
+    // previous player while the UI displays the new name.
+    if (this.connectionStatus() !== 'DISCONNECTED') {
+      await this.rxStomp.deactivate();
+      this.connectionStatus.set('DISCONNECTED');
     }
 
     this.connectionStatus.set('CONNECTING');
     
     this.rxStomp.configure({
-      brokerURL: 'ws://localhost:8080/ws',
+      brokerURL: `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`,
       connectHeaders: {
         Authorization: `Bearer ${token}`
       },
@@ -42,11 +52,25 @@ export class WebsocketService {
     });
 
     this.rxStomp.activate();
-    await firstValueFrom(this.rxStomp.connected$.pipe(take(1), timeout(10000)));
+    try {
+      await firstValueFrom(this.rxStomp.connected$.pipe(
+        take(1),
+        timeout(this.mobileConnectionTimeoutMs)
+      ));
+      this.connectedToken = token;
+    } catch (error) {
+      // Safari on iOS can leave the HTTP upgrade pending for several seconds.
+      // Tear down a timed-out attempt so a later tap never reuses a stale JWT.
+      await this.rxStomp.deactivate();
+      this.connectedToken = '';
+      this.connectionStatus.set('DISCONNECTED');
+      throw error;
+    }
   }
 
   disconnect() {
-    this.rxStomp.deactivate();
+    void this.rxStomp.deactivate();
+    this.connectedToken = '';
     this.connectionStatus.set('DISCONNECTED');
   }
 

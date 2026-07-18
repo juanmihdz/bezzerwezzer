@@ -183,10 +183,15 @@
   </div>
 
   <!-- Actions -->
-  <div
-    class="mt-16 flex justify-center relative z-10 w-full max-w-sm animate-slide-up delay-500 px-4"
-  >
-    <button (click)="goHome()" class="btn-primary w-full text-xl font-black py-6 rounded-2xl">
+  <div class="mt-16 grid gap-3 relative z-10 w-full max-w-sm animate-slide-up delay-500 px-4">
+    @if (isHost() || canJoinRematch) {
+      <button (click)="playAgain()" class="btn-primary w-full text-xl font-black py-5 rounded-2xl">
+        {{ isHost() ? 'Crear revancha' : 'Unirme a la revancha' }}
+      </button>
+    } @else if (!isHost()) {
+      <p class="text-center text-sm font-bold text-text-muted">Esperando a que el anfitrión cree la revancha…</p>
+    }
+    <button (click)="goHome()" class="w-full text-lg font-black py-4 rounded-2xl border border-white/15 text-white/80 hover:bg-white/5">
       Volver al Inicio
     </button>
   </div>

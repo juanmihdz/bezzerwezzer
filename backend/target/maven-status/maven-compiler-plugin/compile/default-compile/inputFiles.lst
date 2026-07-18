@@ -25,6 +25,7 @@
 /app/src/main/java/com/bezzerwizzer/model/Question.java
 /app/src/main/java/com/bezzerwizzer/model/enums/CategoryType.java
 /app/src/main/java/com/bezzerwizzer/model/enums/GamePhase.java
+/app/src/main/java/com/bezzerwizzer/model/enums/QuestionDifficulty.java
 /app/src/main/java/com/bezzerwizzer/model/enums/QuestionType.java
 /app/src/main/java/com/bezzerwizzer/repository/CategoryRepository.java
 /app/src/main/java/com/bezzerwizzer/repository/QuestionRepository.java

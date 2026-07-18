@@ -12,7 +12,7 @@
     }
   </h3>
 
-  <div class="category-list flex w-full min-h-0 flex-grow flex-col gap-2.5 overflow-y-auto overflow-x-clip pr-1 max-[40rem]:overflow-y-visible">
+  <div class="category-list flex w-full min-h-0 flex-grow flex-col gap-2.5 overflow-y-auto overflow-x-clip pr-1 max-[40rem]:overflow-y-visible" cdkDropList [cdkDropListData]="displaySlots" [cdkDropListDisabled]="!isAssigning" (cdkDropListDropped)="dropWithCdk($event)">
     @for (slot of displaySlots; track slot.category.id; let i = $index) {
       <div
         class="category-row relative group"
@@ -21,7 +21,8 @@
         [class.is-drop-target]="dropTargetIndex === i"
         [class.opacity-40]="slot.answered"
         [class.grayscale]="slot.answered"
-        [attr.draggable]="isAssigning"
+        cdkDrag
+        [cdkDragDisabled]="!isAssigning"
         [attr.tabindex]="isAssigning ? 0 : null"
         [attr.data-category-index]="i"
         [attr.aria-label]="
@@ -32,11 +33,6 @@
               ' puntos. Arrastra o usa las flechas para intercambiar su puntuación.'
             : null
         "
-        (dragstart)="startDrag($event, i)"
-        (dragover)="allowDrop($event, i)"
-        (dragleave)="clearDropTarget(i)"
-        (drop)="drop($event, i)"
-        (dragend)="endDrag()"
         (keydown)="moveWithKeyboard($event, i)"
       >
         <app-category-badge

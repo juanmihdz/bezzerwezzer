@@ -46,6 +46,9 @@ class ScoringServiceTest {
         assertTrue(service.isCorrect(question, "Vincent van Gogh"));
         assertEquals("Vincent van Gogh", service.correctAnswerText(question));
         assertEquals("B", service.correctOptionKey(question));
+
+        question.setCorrectOption("D");
+        assertTrue(service.isCorrect(question, "Salvador Dali"));
     }
 
     @Test

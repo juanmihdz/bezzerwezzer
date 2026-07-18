@@ -27,12 +27,14 @@ export class QuestionModalComponent implements OnChanges {
 
   selectedOption: string | null = null;
   freeTextValue: string = '';
+  freeTextPrepared = false;
   private autoSubmittedAtTimerEnd = false;
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['question'] && changes['question'].previousValue?.id !== changes['question'].currentValue?.id) {
       this.selectedOption = null;
       this.freeTextValue = '';
+      this.freeTextPrepared = false;
       this.autoSubmittedAtTimerEnd = false;
     }
     if (changes['timer'] && !changes['timer'].firstChange && this.timer === 0 && !this.autoSubmittedAtTimerEnd) {
@@ -56,10 +58,15 @@ export class QuestionModalComponent implements OnChanges {
 
   submitFreeText() {
     if (this.isAnswered || !this.question || !this.freeTextValue.trim()) return;
+    if (this.canChangeAnswer) this.freeTextPrepared = true;
     this.onAnswer.emit({
       questionId: this.question.id,
       freeTextAnswer: this.freeTextValue.trim()
     });
+  }
+
+  onFreeTextChanged(): void {
+    this.freeTextPrepared = false;
   }
 
   getOptionClass(letter: string): string {

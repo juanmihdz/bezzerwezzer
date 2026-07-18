@@ -15,6 +15,9 @@
 .category-row.is-assigning:focus-visible { outline: 0.125rem solid var(--color-accent); outline-offset: 0.1875rem; }
 .category-row.is-dragging { opacity: .38; transform: scale(.98); }
 .category-row.is-drop-target { transform: translateY(-0.125rem); box-shadow: inset 0 0 0 0.125rem var(--color-accent), 0 0 1.5rem color-mix(in srgb, var(--color-accent) 30%, transparent); }
+.cdk-drag-preview { border-radius: 1rem; box-shadow: 0 1rem 2.5rem rgb(0 0 0 / .48), 0 0 1.5rem color-mix(in srgb, var(--color-accent) 30%, transparent); }
+.cdk-drag-placeholder { opacity: .28; }
+.cdk-drop-list-dragging .category-row:not(.cdk-drag-placeholder) { transition: transform 180ms ease; }
 
 .assignment-hint { position: fixed; z-index: 70; top: 50%; left: 50%; width: min(92vw, 30rem); transform: translate(-50%, -50%); display: flex; align-items: center; gap: 1rem; padding: 1rem 1.15rem; border: 0.0625rem solid rgb(255 255 255 / .16); border-radius: 1.25rem; background: linear-gradient(145deg, rgb(31 25 51 / .96), rgb(12 9 24 / .96)); box-shadow: 0 1.5rem 4.375rem rgb(0 0 0 / .6), 0 0 2.25rem color-mix(in srgb, var(--color-accent) 15%, transparent); color: white; animation: hint-in-out 5.7s ease both; pointer-events: none; }
 .assignment-hint > span:last-child { display: flex; flex-direction: column; gap: .2rem; color: rgb(255 255 255 / .7); font-size: .84rem; line-height: 1.35; }

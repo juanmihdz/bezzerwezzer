@@ -85,15 +85,38 @@ export class AudioService {
     this.playTone(500, 'sine', 0.2);
   }
 
+  playQuestionStart() {
+    this.playTone(440, 'triangle', 0.09, 0.09);
+    setTimeout(() => this.playTone(660, 'triangle', 0.13, 0.1), 75);
+    setTimeout(() => this.playTone(880, 'sine', 0.2, 0.08), 165);
+  }
+
   playBezzerwizzer() {
-    this.playTone(180, 'sawtooth', 0.12, 0.16);
-    setTimeout(() => this.playTone(320, 'square', 0.16, 0.12), 90);
-    setTimeout(() => this.playTone(520, 'square', 0.25, 0.1), 190);
+    this.playTone(150, 'sawtooth', 0.1, 0.2);
+    setTimeout(() => this.playTone(220, 'square', 0.12, 0.16), 70);
+    setTimeout(() => this.playTone(330, 'square', 0.14, 0.13), 145);
+    setTimeout(() => this.playTone(490, 'sawtooth', 0.18, 0.12), 225);
+    setTimeout(() => this.playTone(660, 'square', 0.3, 0.1), 315);
+  }
+
+  playZwapActivated() {
+    this.playTone(560, 'triangle', 0.1, 0.1);
+    setTimeout(() => this.playTone(690, 'triangle', 0.12, 0.11), 80);
+    setTimeout(() => this.playTone(820, 'sine', 0.2, 0.09), 165);
   }
 
   playZwap() {
-    this.playTone(720, 'sine', 0.11, 0.11);
-    setTimeout(() => this.playTone(420, 'triangle', 0.16, 0.12), 85);
-    setTimeout(() => this.playTone(860, 'sine', 0.22, 0.1), 170);
+    this.playTone(860, 'sine', 0.1, 0.12);
+    setTimeout(() => this.playTone(520, 'triangle', 0.11, 0.12), 75);
+    setTimeout(() => this.playTone(740, 'sine', 0.1, 0.11), 145);
+    setTimeout(() => this.playTone(610, 'triangle', 0.13, 0.1), 220);
+    setTimeout(() => this.playTone(980, 'sine', 0.28, 0.11), 305);
+  }
+
+  playGameOver() {
+    const notes = [523, 659, 784, 1047, 1319];
+    notes.forEach((note, index) => {
+      setTimeout(() => this.playTone(note, index < 3 ? 'triangle' : 'sine', index === 4 ? 0.55 : 0.2, 0.13), index * 115);
+    });
   }
 }

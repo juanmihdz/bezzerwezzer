@@ -4,7 +4,6 @@ import { AnswerResult, BezzerwizzerResult, BezzerwizzerPlayedPayload, GamePhase,
 import { Question } from '../../shared/models/player.model';
 import { AuthService } from './auth.service';
 import { WebsocketService } from './websocket.service';
-import { SnackbarService } from './snackbar.service';
 import { AudioService } from './audio.service';
 
 @Injectable({
@@ -12,7 +11,6 @@ import { AudioService } from './audio.service';
 })
 export class GameStateService {
   private authService = inject(AuthService);
-  private snackbar = inject(SnackbarService);
   private audioService = inject(AudioService);
 
   // Core State Signals
@@ -20,6 +18,7 @@ export class GameStateService {
   roomCode = signal<string>('');
   players = signal<PlayerInfo[]>([]);
   hostPlayerId = signal<string>('');
+  winningPosition = signal<number>(30);
   
   // Game Play Signals
   currentQuestion = signal<Question | null>(null);
@@ -33,6 +32,7 @@ export class GameStateService {
   timerTotal = signal<number>(30);
   myTacticalTiles = signal<TacticalTiles>({ zwap: 1, bezzerwizzer: 2 });
   lastAnswerResult = signal<AnswerResult | null>(null);
+  answerResults = signal<AnswerResult[]>([]);
   turnSequence = signal<number>(0);
   bezzerwizzerResults = signal<BezzerwizzerResult[]>([]);
   preparationSkipVotes = signal<string[]>([]);
@@ -58,6 +58,7 @@ export class GameStateService {
   canPlayBezzerwizzer = computed(() => {
     return this.myTacticalTiles().bezzerwizzer > 0 && 
            !this.isMyTurn() && 
+           !this.bezzerwizzerPlayers().includes(this.authService.playerId()) &&
            (this.gamePhase() === 'PLAYING' ||
             (this.gamePhase() === 'ANSWERING' && this.currentAnswerPlayerId() === this.currentTurnPlayerId()));
   });
@@ -93,6 +94,15 @@ export class GameStateService {
     console.log('Subscribed to room:', roomCode, this.roomSubscription);
   }
 
+  initializeLobby(room: unknown, assumeCurrentPlayerIsHost = false): void {
+    const snapshot = room as { roomCode?: string; players?: PlayerInfo[]; hostPlayerId?: string; winningPosition?: number };
+    this.updateRoom({
+      ...snapshot,
+      hostPlayerId: snapshot.hostPlayerId || (assumeCurrentPlayerIsHost ? this.authService.playerId() : '')
+    });
+    this.gamePhase.set('LOBBY');
+  }
+
   handleGameEvent(event: GameEvent) {
     console.log('Game Event Received:', event.type, event.payload);
     
@@ -112,12 +122,10 @@ export class GameStateService {
 
       case 'ZWAP_APPLIED': {
         const zwap = event.payload as ZwapAppliedPayload;
-        const target = zwap.playerId === zwap.targetPlayerId
-          ? 'sus propias categorías'
-          : `las categorías de ${zwap.targetPlayerName}`;
-        const message = `${zwap.playerName} ha intercambiado ${zwap.sourceCategory} por ${zwap.targetCategory} (${target})`;
-        this.snackbar.show(message, 'info');
-        this.showTacticalAnnouncement(`↔ ZWAP · ${message}`);
+        const message = zwap.playerId === zwap.targetPlayerId
+          ? `${zwap.playerName} ha reordenado sus categorías: «${zwap.sourceCategory}» y «${zwap.targetCategory}».`
+          : `${zwap.playerName} ha usado ZWAP: cambió «${zwap.sourceCategory}» por «${zwap.targetCategory}» de ${zwap.targetPlayerName}.`;
+        this.showTacticalAnnouncement(`↔ ZWAP · ${message}`, 6000);
         this.audioService.playZwap();
         break;
       }
@@ -125,7 +133,6 @@ export class GameStateService {
       case 'BEZZERWIZZER_PLAYED': {
         const bezzer = event.payload as BezzerwizzerPlayedPayload;
         const message = `${bezzer.playerName} reta a ${bezzer.targetPlayerName}`;
-        this.snackbar.show(`¡BEZZERWIZZER! ${message}`, 'warning');
         this.showTacticalAnnouncement(`★ BEZZERWIZZER · ${message}`);
         this.audioService.playBezzerwizzer();
         break;
@@ -139,8 +146,9 @@ export class GameStateService {
         this.lastAnswerResult.set(null);
         this.gamePhase.set('PLAYING');
         this.preparationSkipVotes.set([]);
-        this.startTimer(turn.timeLimit ?? 10);
-        this.timerTotal.set(turn.timeLimit ?? 10);
+        this.turnSequence.update(value => value + 1);
+        this.startTimer(turn.timeLimit ?? 15);
+        this.timerTotal.set(turn.timeLimit ?? 15);
         break;
       }
         
@@ -153,7 +161,8 @@ export class GameStateService {
         this.timerTotal.set(turn.timeLimit ?? 30);
         this.gamePhase.set('ANSWERING');
         this.bezzerwizzerResults.set([]);
-        this.turnSequence.update(value => value + 1);
+        this.answerResults.set([]);
+        this.audioService.playQuestionStart();
         break;
       }
 
@@ -164,6 +173,7 @@ export class GameStateService {
         this.gamePhase.set('ANSWERING');
         this.startTimer(answering.timeLimit ?? 30);
         this.timerTotal.set(answering.timeLimit ?? 30);
+        this.audioService.playQuestionStart();
         break;
       }
 
@@ -173,11 +183,11 @@ export class GameStateService {
       case 'ANSWER_RESULT': {
         const result = event.payload as AnswerResult;
         this.stopTimer();
-        // Show the result for whoever is answering now, including a player
-        // who receives a Bezzerwizzer rebound.
-        if (result.playerId === this.currentAnswerPlayerId()) {
-          this.lastAnswerResult.set(result);
-        }
+        this.answerResults.update(results => [...results, result]);
+        // The server's result is authoritative. In particular, a timeout can
+        // advance the rebound state before the browser processes this event,
+        // so do not discard it when the local active-player signal changed.
+        this.lastAnswerResult.set(result);
         this.players.update(players => players.map(player => player.playerId === result.playerId
           ? { ...player, boardPosition: Math.max(0, player.boardPosition + result.points) }
           : player));
@@ -205,10 +215,14 @@ export class GameStateService {
       : [];
     this.players.set(playersArray);
     this.hostPlayerId.set(room.hostPlayerId || '');
+    this.winningPosition.set(room.winningPosition ?? 30);
   }
 
   private updateFromGameState(state: GameStatePayload) {
     this.roomCode.set(state.roomCode);
+    if (state.hostPlayerId) {
+      this.hostPlayerId.set(state.hostPlayerId);
+    }
     this.gamePhase.set(state.phase);
     
     if (state.players) {
@@ -246,6 +260,7 @@ export class GameStateService {
     this.bezzerwizzerPlayers.set(state.bezzerwizzerPlayers ?? []);
     this.bezzerwizzerAnswered.set(state.bezzerwizzerAnswered ?? []);
     this.currentRound.set(state.round);
+    this.winningPosition.set(state.winningPosition ?? this.winningPosition());
     this.preparationSkipVotes.set(state.preparationSkipVotes ?? []);
     if (state.timer && state.timer > 0) {
       this.startTimer(state.timer);
@@ -273,12 +288,12 @@ export class GameStateService {
     }
   }
 
-  private showTacticalAnnouncement(message: string): void {
+  private showTacticalAnnouncement(message: string, duration = 3500): void {
     window.clearTimeout(this.tacticalAnnouncementTimeout);
     this.tacticalAnnouncement.set(message);
     this.tacticalAnnouncementTimeout = window.setTimeout(
       () => this.tacticalAnnouncement.set(null),
-      3500
+      duration
     );
   }
 
@@ -293,12 +308,14 @@ export class GameStateService {
     this.roomCode.set('');
     this.players.set([]);
     this.hostPlayerId.set('');
+    this.winningPosition.set(30);
     this.currentQuestion.set(null);
     this.myCategories.set([]);
     this.currentTurnPlayerId.set('');
     this.currentAnswerPlayerId.set('');
     this.currentRound.set(0);
     this.lastAnswerResult.set(null);
+    this.answerResults.set([]);
     this.turnSequence.set(0);
     this.bezzerwizzerResults.set([]);
     this.preparationSkipVotes.set([]);

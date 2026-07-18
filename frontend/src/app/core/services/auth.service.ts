@@ -11,7 +11,7 @@ export interface AuthResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8080/api/auth';
+  private apiUrl = `${window.location.origin}/api/auth`;
 
   playerId = signal<string>('');
   username = signal<string>('');

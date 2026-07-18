@@ -8,6 +8,7 @@ export interface GameEvent {
 
 export interface GameStatePayload {
   roomCode: string;
+  hostPlayerId?: string;
   phase: GamePhase;
   players: PlayerStatePayload[] | Record<string, PlayerStatePayload>;
   currentTurnPlayerId?: string | null;
@@ -17,6 +18,7 @@ export interface GameStatePayload {
   bezzerwizzerPlayers?: string[];
   bezzerwizzerAnswered?: string[];
   round: number;
+  winningPosition?: number;
   timer?: number;
   preparationSkipVotes?: string[];
 }
@@ -42,6 +44,10 @@ export interface AnswerResult {
   playerId: string;
   correct: boolean;
   points: number;
+  submittedAnswer?: string;
+  reboundContinues?: boolean;
+  reboundSummary?: boolean;
+  submittedAnswerText?: string;
   correctAnswer: string;
   correctOption?: string;
   bezzerwizzerResults?: BezzerwizzerResult[];
@@ -101,6 +107,7 @@ export interface RoomInfo {
   players: PlayerInfo[];
   hostPlayerId: string;
   phase: string;
+  winningPosition?: number;
 }
 
 export interface PlayerInfo {

@@ -27,7 +27,9 @@ export class LobbyComponent {
   players = this.gameState.players;
   hostId = this.gameState.hostPlayerId;
   myId = this.authService.playerId;
+  myUsername = this.authService.username;
   isHost = this.gameState.isHost;
+  winningPosition = this.gameState.winningPosition;
 
   emptySlots = computed(() => {
     const count = Math.max(0, 4 - this.players().length);
@@ -39,6 +41,15 @@ export class LobbyComponent {
   });
 
   readyPlayers = computed(() => this.players().filter((player) => player.ready).length);
+
+  isCurrentPlayer(player: { playerId: string; username: string }): boolean {
+    return player.playerId === this.myId() || player.username === this.myUsername();
+  }
+
+  get canManageLobby(): boolean {
+    return this.isHost() || this.players().some(player =>
+      player.playerId === this.hostId() && this.isCurrentPlayer(player));
+  }
 
   constructor() {
     void this.joinRoomFromUrl();
@@ -87,8 +98,13 @@ export class LobbyComponent {
   }
 
   startGame() {
-    if (this.canStartGame()) {
+    if (this.canManageLobby && this.canStartGame()) {
       this.wsService.send(`/app/game/${this.roomCode()}/start`, {});
     }
+  }
+
+  setWinningPosition(position: number): void {
+    if (!this.canManageLobby || position === this.winningPosition()) return;
+    this.wsService.send(`/app/room/${this.roomCode()}/winning-position`, { winningPosition: position });
   }
 }

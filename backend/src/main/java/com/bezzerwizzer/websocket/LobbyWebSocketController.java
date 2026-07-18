@@ -43,4 +43,16 @@ public class LobbyWebSocketController {
             messagingTemplate.convertAndSend("/topic/room/" + code, new GameEvent("ROOM_STATE", room));
         }
     }
+
+    @MessageMapping("/room/{code}/winning-position")
+    public void setWinningPosition(@DestinationVariable String code, Principal principal, Map<String, Integer> payload) {
+        if (principal instanceof com.bezzerwizzer.config.StompPrincipal sp) {
+            Integer winningPosition = payload.get("winningPosition");
+            if (winningPosition == null) {
+                throw new IllegalArgumentException("Indica la casilla final");
+            }
+            GameRoom room = roomService.setWinningPosition(code, sp.playerId(), winningPosition);
+            messagingTemplate.convertAndSend("/topic/room/" + code, new GameEvent("ROOM_STATE", room));
+        }
+    }
 }

@@ -1,11 +1,15 @@
 import { Injectable, signal } from '@angular/core';
 import * as i0 from "@angular/core";
 export class SnackbarService {
+    maxVisibleMessages = 3;
     messages = signal([], /* @ts-ignore */
     ...(ngDevMode ? [{ debugName: "messages" }] : /* istanbul ignore next */ []));
     show(message, type = 'info', duration = 4000) {
         const id = Math.random().toString(36).substring(2, 9);
-        this.messages.update(msgs => [...msgs, { id, message, type }]);
+        this.messages.update(msgs => [
+            ...msgs.slice(-(this.maxVisibleMessages - 1)),
+            { id, message, type }
+        ]);
         if (duration > 0) {
             setTimeout(() => this.remove(id), duration);
         }

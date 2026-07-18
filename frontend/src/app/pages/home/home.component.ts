@@ -53,6 +53,7 @@ export class HomeComponent {
       const success = await this.authService.loginAsGuest(this.usernameJoin.trim());
 
       if (success) {
+        this.gameState.reset();
         await this.wsService.connect(this.authService.token());
         this.gameState.connectToRoom(code);
         this.wsService.send(`/app/room/${code}/join`, {});
@@ -76,6 +77,7 @@ export class HomeComponent {
       const success = await this.authService.loginAsGuest(this.usernameCreate.trim());
 
       if (success) {
+        this.gameState.reset();
         await this.wsService.connect(this.authService.token());
         const roomCreated = firstValueFrom(this.wsService.subscribeToPersonal().pipe(
           filter((event: any) => event.type === 'ROOM_CREATED'),
@@ -85,6 +87,9 @@ export class HomeComponent {
         this.wsService.send('/app/room/create', {});
         const event: any = await roomCreated;
         const code = event.payload.roomCode;
+        // The host receives this authoritative room snapshot before subscribing
+        // to the lobby topic, so its host controls are available immediately.
+        this.gameState.initializeLobby(event.payload, true);
         this.gameState.connectToRoom(code);
         this.wsService.send(`/app/room/${code}/join`, {});
         await this.router.navigate(['/lobby', code]);

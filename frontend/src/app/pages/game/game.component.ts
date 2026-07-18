@@ -51,16 +51,24 @@ export class GameComponent {
   lastResultPoints = 0;
   lastResultAnswerText = '';
   lastResultPlayerId = '';
+  showReboundSummary = false;
   bezzerwizzerResults: any[] = [];
   showZwapSelector = false;
   zwapSourceIndex: number | null = null;
   zwapTargetPlayerId: string | null = null;
   zwapTargetSlotIndex: number | null = null;
   private resultOverlayTimeout?: number;
+  private gameOverNavigationTimeout?: number;
+  private hasPlayedGameOverSound = false;
+  mobileSection: 'board' | 'categories' = 'board';
 
   setAudioVolume(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.audioService.setVolume(Number(input.value));
+  }
+
+  goToMobileSection(section: 'board' | 'categories'): void {
+    this.mobileSection = section;
   }
 
   // Temporary state for assignment
@@ -76,7 +84,28 @@ export class GameComponent {
       const phase = this.gameState.gamePhase();
 
       if (phase === 'GAME_OVER') {
-        this.router.navigate(['/results', this.gameState.roomCode()]);
+        if (!this.hasPlayedGameOverSound) {
+          this.audioService.playGameOver();
+          this.hasPlayedGameOverSound = true;
+        }
+        window.clearTimeout(this.gameOverNavigationTimeout);
+        // Let the final answer be seen before replacing the board with the
+        // champions screen. Rebound summaries need their longer reading time.
+        const resultDelay = this.gameState.answerResults().length > 1
+          ? 6000
+          : this.gameState.lastAnswerResult() ? 4000 : 1600;
+        this.gameOverNavigationTimeout = window.setTimeout(
+          () => this.router.navigate(['/results', this.gameState.roomCode()]),
+          resultDelay
+        );
+      }
+
+      if (phase === 'ZWAP') {
+        this.audioService.playZwapActivated();
+      }
+
+      if (phase !== 'GAME_OVER') {
+        this.hasPlayedGameOverSound = false;
       }
 
       if (phase === 'BEZZERWIZZER_WINDOW') {
@@ -85,14 +114,28 @@ export class GameComponent {
         }
       }
 
+      if (phase === 'ANSWERING' || phase === 'BEZZERWIZZER_WINDOW' || phase === 'TURN_RESULT' || phase === 'ROUND_END') {
+        // Results, answer prompts and rebound states take priority over the
+        // mobile drawer so their feedback is never obscured.
+        this.mobileSection = 'board';
+      }
+
       if (phase === 'ANSWERING') {
         this.hasAnswered = false;
       }
 
+      if (phase === 'ROUND_END') {
+        // Keep the final answer (and its solution) visible, but remove the
+        // rebound-only summary as soon as the four-category cycle ends.
+        this.gameState.answerResults.set([]);
+        this.gameState.bezzerwizzerResults.set([]);
+      }
+
       if (phase === 'CATEGORY_ASSIGNMENT') {
-        // The final answer of a cycle can transition straight into a new
-        // assignment screen, so do not leave its result overlay on top.
+        this.mobileSection = 'categories';
         this.dismissResultOverlay();
+        this.gameState.answerResults.set([]);
+        this.gameState.bezzerwizzerResults.set([]);
       }
 
       if (phase === 'PLAYING' && this.showZwapSelector) {
@@ -121,14 +164,18 @@ export class GameComponent {
     effect(() => {
       const result = this.gameState.lastAnswerResult();
       if (!result) return;
+      const mainPlayerFailedWithPendingRebound = !result.correct
+        && result.playerId === this.gameState.currentTurnPlayerId()
+        && this.gameState.bezzerwizzerPlayers().length > 0;
+      if (result.reboundContinues || mainPlayerFailedWithPendingRebound) {
+        // The next rebound starts immediately. Keep the board unobstructed
+        // and wait for the final rebound result summary.
+        this.gameState.lastAnswerResult.set(null);
+        return;
+      }
       this.showAnswerResult(result);
     });
 
-    effect(() => {
-      const isInteractiveRebound = this.gameState.gamePhase() === 'ANSWERING'
-        && this.gameState.currentAnswerPlayerId() !== this.gameState.currentTurnPlayerId();
-      if (isInteractiveRebound) this.dismissResultOverlay();
-    });
   }
 
   private async restoreGameState() {
@@ -217,7 +264,13 @@ export class GameComponent {
   }
 
   get hasReboundStatus(): boolean {
-    return this.isReboundTurn || this.reboundQueueNames.length > 0;
+    // The rebound status belongs to the current question only.  A final
+    // GAME_STATE can still carry the previous answer player while the next
+    // category-assignment screen is rendered, so never show a stale chip
+    // outside the question/result transition.
+    const phase = this.gameState.gamePhase();
+    const canShowRebound = phase === 'ANSWERING' || phase === 'TURN_RESULT';
+    return canShowRebound && (this.isReboundTurn || this.reboundQueueNames.length > 0);
   }
 
   get phaseText(): string {
@@ -349,13 +402,20 @@ export class GameComponent {
     this.lastResultPlayerId = result.playerId;
     this.lastResultPoints = result.points;
     this.lastResultAnswerText = this.resolveCorrectAnswerText(result);
+    // The aggregate client state is also checked so reconnects or older
+    // server events cannot fall back to an individual correct/incorrect
+    // modal once a rebound sequence has started.
+    this.showReboundSummary = result.reboundSummary === true
+      || this.gameState.answerResults().length > 1;
     this.bezzerwizzerResults = result.bezzerwizzerResults ?? [];
     this.showResultOverlay = true;
     this.resultOverlayTimeout = window.setTimeout(
       () => this.clearAnswerResult(),
-      result.correct ? 1600 : 4000
+      this.showReboundSummary ? 6000 : 4000
     );
-    result.correct ? this.audioService.playCorrect() : this.audioService.playIncorrect();
+    if (!this.showReboundSummary) {
+      result.correct ? this.audioService.playCorrect() : this.audioService.playIncorrect();
+    }
   }
 
   private resolveCorrectAnswerText(result: AnswerResult): string {
@@ -369,6 +429,23 @@ export class GameComponent {
     return answer || 'Sin respuesta';
   }
 
+  getSubmittedAnswerText(result: AnswerResult): string {
+    const submittedAnswerText = result.submittedAnswerText?.trim();
+    if (submittedAnswerText) return submittedAnswerText;
+    const submitted = result.submittedAnswer?.trim();
+    // Older/reconnecting game servers may only report the validation result
+    // for an auto-resolved prepared rebound. A correct answer is never shown
+    // as "Sin respuesta" in that case.
+    if (!submitted) return result.correct ? this.resolveCorrectAnswerText(result) : 'Sin respuesta';
+    const optionKey = submitted.match(/^[A-D]$/i)?.[0]?.toUpperCase();
+    if (optionKey) {
+      const index = optionKey.charCodeAt(0) - 65;
+      const optionText = this.gameState.currentQuestion()?.options?.[index];
+      return optionText ? `${optionKey} · ${optionText}` : optionKey;
+    }
+    return submitted;
+  }
+
   private dismissResultOverlay(): void {
     window.clearTimeout(this.resultOverlayTimeout);
     this.clearAnswerResult();
@@ -378,6 +455,11 @@ export class GameComponent {
     this.showResultOverlay = false;
     this.lastResultPlayerId = '';
     this.lastResultCorrect = false;
+    this.showReboundSummary = false;
+    // Consume the event as well as hiding it locally. Otherwise a later
+    // reactive update can re-run the result effect with the stale failure,
+    // which is especially noticeable for free-text questions.
+    this.gameState.lastAnswerResult.set(null);
   }
 
   getPlayerName(id: string): string {

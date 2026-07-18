@@ -43,7 +43,7 @@
     class="relative z-10 grid min-h-0 flex-grow grid-cols-1 gap-3 lg:grid-cols-[clamp(13rem,18vw,16.25rem)_minmax(0,1fr)_clamp(15.5rem,20vw,18.75rem)] lg:gap-4 min-[106.25rem]:grid-cols-[clamp(20rem,20vw,21.875rem)_minmax(0,1fr)_clamp(17.5rem,18vw,20rem)] min-[106.25rem]:gap-5"
   >
     <!-- Left Sidebar: Scoreboard (Hidden on small mobile, bottom on tablet, left on desktop) -->
-    <aside class="score-area order-2 flex h-auto min-h-0 min-w-0 w-full lg:order-1 lg:h-full lg:flex-col">
+    <aside id="mobile-score" class="score-area order-2 flex h-auto min-h-0 min-w-0 w-full lg:order-1 lg:h-full lg:flex-col" [class.mobile-panel-hidden]="true">
       <app-scoreboard
         [players]="gameState.sortedPlayers()"
         [currentTurnPlayerId]="gameState.currentTurnPlayerId()"
@@ -53,12 +53,13 @@
     </aside>
 
     <!-- Center: Board -->
-    <section
+    <section id="mobile-board"
       class="board-area relative order-1 flex w-full min-w-0 min-h-[20rem] items-center justify-center p-1 lg:order-2 lg:min-h-0 lg:pt-16 lg:pb-16"
     >
       <app-board
         [players]="gameState.players()"
         [currentTurnPlayerId]="gameState.currentTurnPlayerId()"
+        [winningPosition]="gameState.winningPosition()"
       >
       </app-board>
 
@@ -101,7 +102,7 @@
     </section>
 
     <!-- Right Sidebar: Personal Dashboard -->
-    <aside class="dashboard-area order-3 flex h-auto min-h-0 min-w-0 w-full flex-col gap-3 lg:h-full">
+    <aside id="mobile-categories" class="dashboard-area order-3 flex h-auto min-h-0 min-w-0 w-full flex-col gap-3 lg:h-full" [class.is-mobile-open]="mobileSection === 'categories'">
       <div class="flex-grow min-h-0">
         <app-category-slots
           [slots]="gameState.myCategories()"
@@ -114,7 +115,7 @@
       </div>
 
       @if (gameState.gamePhase() !== 'CATEGORY_ASSIGNMENT') {
-        <details class="opponents-categories glass">
+        <details class="opponents-categories glass" open>
           <summary>Ver categorías de los demás</summary>
           @for (player of gameState.players(); track player) {
             @if (player.playerId !== playerId()) {
@@ -152,7 +153,7 @@
         </details>
       }
 
-      <div class="flex-none min-h-40 lg:h-[13rem]">
+      <div id="mobile-tactics" class="flex-none min-h-40 lg:h-[13rem]">
         <app-tactical-panel
           [zwapsLeft]="gameState.myTacticalTiles().zwap"
           [bezzerwizzersLeft]="gameState.myTacticalTiles().bezzerwizzer"
@@ -168,6 +169,14 @@
         </app-tactical-panel>
       </div>
     </aside>
+    @if (mobileSection === 'categories') {
+      <button
+        type="button"
+        class="mobile-categories-backdrop"
+        aria-label="Cerrar panel de mis fichas"
+        (click)="goToMobileSection('board')"
+      ></button>
+    }
   </main>
 
   <footer class="game-controls relative z-28 flex flex-none items-center justify-center gap-3 lg:absolute lg:right-0 lg:bottom-[.2rem] lg:left-0 lg:mx-auto lg:w-max" aria-label="Controles de la partida">
@@ -201,6 +210,21 @@
       </div>
     </div>
   </footer>
+
+  <nav class="mobile-panel-nav" aria-label="Navegación rápida de la partida">
+    <button type="button" (click)="goToMobileSection('board')" [attr.aria-current]="mobileSection === 'board' ? 'page' : null" [class.is-active]="mobileSection === 'board'">
+      <span aria-hidden="true">◎</span><span>Tablero</span>
+    </button>
+    <button type="button" (click)="goToMobileSection('categories')" [attr.aria-current]="mobileSection === 'categories' ? 'page' : null" [attr.aria-expanded]="mobileSection === 'categories'" [class.is-active]="mobileSection === 'categories'">
+      <span aria-hidden="true">▦</span><span>Mis fichas</span>
+    </button>
+    <button type="button" class="mobile-tactical-action mobile-tactical-action--zwap" (click)="onZwapClick()" [disabled]="!gameState.canPlayZwap()" [attr.aria-label]="'Usar ZWAP. Quedan ' + gameState.myTacticalTiles().zwap">
+      <span aria-hidden="true">↔</span><span>ZWAP · {{ gameState.myTacticalTiles().zwap }}</span>
+    </button>
+    <button type="button" class="mobile-tactical-action mobile-tactical-action--bezzer" (click)="onBezzerwizzerClick()" [disabled]="!canChallengeWithBezzerwizzer" [attr.aria-label]="'Usar Bezzerwizzer. Quedan ' + gameState.myTacticalTiles().bezzerwizzer">
+      <span aria-hidden="true">✦</span><span>BEZZER · {{ gameState.myTacticalTiles().bezzerwizzer }}</span>
+    </button>
+  </nav>
 
   <!-- Overlays -->
   @if (showQuestionModal) {
@@ -239,9 +263,10 @@
               <h3>1. Elige una de tus categorías</h3>
               <div class="zwap-categories">
                 @for (item of availableZwapSlots(me); track item.index) {
-                  <button type="button" class="zwap-category-choice" [class.is-selected]="zwapSourceIndex === item.index" (click)="selectZwapSource(item.index)">
+                  <button type="button" class="zwap-category-choice" [class.is-selected]="zwapSourceIndex === item.index" (click)="selectZwapSource(item.index)" [attr.title]="item.slot.category.name">
                     <app-category-badge [name]="item.slot.category.name" [icon]="item.slot.category.icon" [color]="item.slot.category.color" [compact]="true"></app-category-badge>
                     <span>{{ item.slot.pointValue }} pts</span>
+                    <span class="zwap-category-tooltip" role="tooltip">{{ item.slot.category.name }}</span>
                   </button>
                 }
               </div>
@@ -266,9 +291,10 @@
                 <h3>3. Elige la categoría destino</h3>
                 <div class="zwap-categories">
                   @for (item of availableZwapSlots(target); track item.index) {
-                    <button type="button" class="zwap-category-choice" [class.is-selected]="zwapTargetSlotIndex === item.index" [disabled]="target.playerId === playerId() && item.index === zwapSourceIndex" (click)="zwapTargetSlotIndex = item.index">
+                    <button type="button" class="zwap-category-choice" [class.is-selected]="zwapTargetSlotIndex === item.index" [disabled]="target.playerId === playerId() && item.index === zwapSourceIndex" (click)="zwapTargetSlotIndex = item.index" [attr.title]="item.slot.category.name">
                       <app-category-badge [name]="item.slot.category.name" [icon]="item.slot.category.icon" [color]="item.slot.category.color" [compact]="true"></app-category-badge>
                       <span>{{ item.slot.pointValue }} pts</span>
+                      <span class="zwap-category-tooltip" role="tooltip">{{ item.slot.category.name }}</span>
                     </button>
                   }
                 </div>
@@ -298,33 +324,61 @@
             : 'border-incorrect/50 glow-incorrect'
         "
       >
-        <div
+        @if (!showReboundSummary) {
+          <div
           class="result-icon w-28 h-28 rounded-full flex items-center justify-center mb-6 shadow-2xl"
           [ngClass]="lastResultCorrect ? 'bg-correct text-white' : 'bg-incorrect text-white'"
-        >
-          @if (lastResultCorrect) {
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.2 4L19 7" /></svg>
-          } @else {
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" /></svg>
-          }
-        </div>
-        <h2 class="text-4xl font-black font-display mb-4 text-white">
-          {{ lastResultCorrect ? '¡CORRECTO!' : 'INCORRECTO' }}
-        </h2>
+          >
+            @if (lastResultCorrect) {
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.2 4L19 7" /></svg>
+            } @else {
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" /></svg>
+            }
+          </div>
+          <h2 class="text-4xl font-black font-display mb-4 text-white">
+            {{ lastResultCorrect ? '¡CORRECTO!' : 'INCORRECTO' }}
+          </h2>
 
-        @if (lastResultCorrect) {
-          <p class="text-2xl font-bold text-correct mb-6">
-            +{{ lastResultPoints }} puntos
-          </p>
+          @if (lastResultCorrect) {
+            <p class="text-2xl font-bold text-correct mb-6">
+              +{{ lastResultPoints }} puntos
+            </p>
+          } @else {
+            <div class="w-full bg-incorrect/10 border-2 border-incorrect/40 rounded-2xl p-4 mb-6 text-left">
+              <p class="text-xs font-bold text-incorrect uppercase tracking-widest mb-2">
+                Respuesta correcta
+              </p>
+              <p class="text-lg font-bold text-white break-words">
+                {{ lastResultAnswerText }}
+              </p>
+            </div>
+          }
         } @else {
-          <div class="w-full bg-incorrect/10 border-2 border-incorrect/40 rounded-2xl p-4 mb-6 text-left">
-            <p class="text-xs font-bold text-incorrect uppercase tracking-widest mb-2">
-              Respuesta correcta
+          <h2 class="mb-4 text-3xl font-black font-display text-white">Resultados de rebotes</h2>
+          <div class="w-full rounded-2xl border border-correct/40 bg-correct/10 p-4 mb-6 text-left">
+            <p class="mb-2 text-xs font-bold uppercase tracking-widest text-correct">
+              Solución correcta
             </p>
             <p class="text-lg font-bold text-white break-words">
               {{ lastResultAnswerText }}
             </p>
           </div>
+        }
+        @if (gameState.answerResults().length > 1) {
+          <section class="w-full bg-surface-elevated/50 p-4 rounded-2xl mb-4 text-left border border-border/50">
+            <h4 class="text-sm font-bold text-purple-400 mb-2 uppercase tracking-widest">Respuestas de la jugada</h4>
+            @for (answerResult of gameState.answerResults(); track answerResult.playerId) {
+              <div class="flex items-center justify-between gap-3 py-2 border-b border-white/10 last:border-0 text-sm">
+                <div class="min-w-0">
+                  <span class="font-bold text-white">{{ getPlayerName(answerResult.playerId) }}</span>
+                  <span class="text-white/65"> · {{ getSubmittedAnswerText(answerResult) }}</span>
+                </div>
+                <span class="shrink-0 font-bold" [ngClass]="answerResult.correct ? 'text-correct' : 'text-incorrect'">
+                  {{ answerResult.correct ? 'Correcta' : 'Incorrecta' }} · {{ answerResult.points > 0 ? '+' : '' }}{{ answerResult.points }} pts
+                </span>
+              </div>
+            }
+          </section>
         }
         <!-- Bezzerwizzer Results if any -->
         @if (bezzerwizzerResults.length > 0) {

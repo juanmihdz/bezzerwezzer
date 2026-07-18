@@ -7,6 +7,7 @@ import {
   OnDestroy,
   SimpleChanges,
 } from '@angular/core';
+import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 
 import { CategorySlot } from '../../../../shared/models/game.model';
 import { CategoryBadgeComponent } from '../../../../shared/components/category-badge/category-badge.component';
@@ -14,7 +15,7 @@ import { CategoryBadgeComponent } from '../../../../shared/components/category-b
 @Component({
   selector: 'app-category-slots',
   standalone: true,
-  imports: [CategoryBadgeComponent],
+  imports: [CategoryBadgeComponent, CdkDrag, CdkDropList],
   templateUrl: './category-slots.component.html',
   styleUrl: './category-slots.component.scss',
 })
@@ -100,6 +101,13 @@ export class CategorySlotsComponent implements OnChanges, OnDestroy {
     this.dropTargetIndex = null;
   }
 
+  dropWithCdk(event: CdkDragDrop<CategorySlot[]>): void {
+    if (!this.isAssigning || event.previousIndex === event.currentIndex) return;
+    const reordered = [...this.displaySlots];
+    moveItemInArray(reordered, event.previousIndex, event.currentIndex);
+    this.applyOrder(reordered);
+  }
+
   moveWithKeyboard(event: KeyboardEvent, index: number): void {
     if (!this.isAssigning || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
     event.preventDefault();
@@ -117,6 +125,10 @@ export class CategorySlotsComponent implements OnChanges, OnDestroy {
       reordered[targetIndex],
       reordered[sourceIndex],
     ];
+    this.applyOrder(reordered);
+  }
+
+  private applyOrder(reordered: CategorySlot[]): void {
     this.displaySlots = reordered.map((slot, index) => ({
       ...slot,
       pointValue: this.points[index],

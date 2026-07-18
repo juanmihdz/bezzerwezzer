@@ -85,7 +85,7 @@ public class RoundManager {
             if (room.getCurrentTurnPlayerIndex() == 0) {
                 room.setCurrentRound(room.getCurrentRound() + 1);
             }
-            
+
             String nextPlayerId = room.getCurrentTurnPlayerId();
             PlayerState nextPlayer = room.getPlayers().get(nextPlayerId);
             

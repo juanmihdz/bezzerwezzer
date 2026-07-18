@@ -144,13 +144,21 @@
   to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 
+@keyframes snackbar-enter-mobile {
+  from { opacity: 0; transform: translate3d(0, -0.9rem, 0) scale(0.97); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
 @media (max-width: 32.5rem) {
   .snackbar-region {
+    top: max(0.65rem, env(safe-area-inset-top));
     right: max(0.65rem, env(safe-area-inset-right));
-    bottom: max(0.65rem, env(safe-area-inset-bottom));
+    bottom: auto;
     left: max(0.65rem, env(safe-area-inset-left));
     width: auto;
-    max-height: calc(100dvh - 1.3rem - env(safe-area-inset-bottom));
+    max-height: calc(
+      100dvh - 1.3rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+    );
   }
 
   .snackbar {
@@ -158,6 +166,7 @@
     min-height: 4.25rem;
     padding: 0.72rem 0.62rem 0.72rem 0.85rem;
     border-radius: 1rem;
+    animation-name: snackbar-enter-mobile;
   }
 
   .snackbar__icon { width: 2.35rem; height: 2.35rem; border-radius: 0.72rem; }

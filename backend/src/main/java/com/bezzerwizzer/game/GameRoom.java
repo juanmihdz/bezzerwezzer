@@ -21,6 +21,8 @@ public class GameRoom {
     private GamePhase phase = GamePhase.LOBBY;
     
     private int currentRound = 0;
+    /** Board position that wins the game, chosen by the host in the lobby. */
+    private int winningPosition = BOARD_SIZE;
     private int currentTurnPlayerIndex = 0;
     private int currentCategorySlotIndex = 0;
     
@@ -36,6 +38,7 @@ public class GameRoom {
     // challengerPlayerId -> targetPlayerId
     private Map<String, String> bezzerwizzerChallenges = new ConcurrentHashMap<>();
     private Map<String, Boolean> bezzerwizzerAnswers = new ConcurrentHashMap<>();
+    private Map<String, String> bezzerwizzerSubmittedAnswers = new ConcurrentHashMap<>();
     private List<String> bezzerwizzerQueue = new ArrayList<>();
     private Set<String> earlyBezzerwizzers = ConcurrentHashMap.newKeySet();
     // Players who agree to skip the short ZWAP preparation window for this turn.

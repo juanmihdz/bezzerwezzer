@@ -33,6 +33,18 @@ public class GameWebSocketController {
         gameService.startGame(code);
     }
 
+    @MessageMapping("/game/{code}/play-again")
+    public void playAgain(@DestinationVariable String code, Principal principal) {
+        gameService.playAgain(code, principal.getName());
+    }
+
+    @MessageMapping("/game/{code}/join-rematch")
+    public void joinRematch(@DestinationVariable String code, Principal principal) {
+        if (principal instanceof com.bezzerwizzer.config.StompPrincipal sp) {
+            gameService.joinRematch(code, sp.playerId(), sp.username());
+        }
+    }
+
     @MessageMapping("/game/{code}/state")
     public void requestGameState(@DestinationVariable String code, Principal principal) {
         gameService.requestGameState(code, principal.getName());

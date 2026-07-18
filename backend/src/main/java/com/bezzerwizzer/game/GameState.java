@@ -10,6 +10,7 @@ import java.util.Set;
 @Builder
 public class GameState {
     private String roomCode;
+    private String hostPlayerId;
     private GamePhase phase;
     private List<PlayerState> players;
     private String currentTurnPlayerId;
@@ -20,6 +21,7 @@ public class GameState {
     private Set<String> bezzerwizzerAnswered;
     private CategoryInfo currentCategory;
     private int round;
+    private int winningPosition;
     private int timer;
     private Set<String> preparationSkipVotes;
 

@@ -27,7 +27,7 @@ Este documento describe el comportamiento que actualmente aplica el servidor. Es
 
 ## Tiempos y turnos
 
-- Cada turno abre una ventana de preparación de **10 segundos** (`PLAYING`). El jugador actual puede revelar la pregunta antes de que termine.
+- Cada turno abre una ventana de preparación de **15 segundos** (`PLAYING`). El jugador actual puede revelar la pregunta antes de que termine.
 - Durante esa ventana todos pueden votar «Paso»; la pregunta se revela antes de tiempo solo cuando el voto es unánime.
 - Al revelarse la pregunta, el jugador del turno dispone de **30 segundos** para contestar (`ANSWERING`). Si no responde, se registra como fallo.
 - Si hay un rebote, cada retador que deba responder dispone de **10 segundos**. Si se agota el tiempo, se considera fallo y se prueba con el siguiente retador.

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.bezzerwizzer.game.ScoringServiceTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.463 s -- in com.bezzerwizzer.game.ScoringServiceTest

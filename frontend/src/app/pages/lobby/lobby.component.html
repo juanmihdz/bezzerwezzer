@@ -27,6 +27,19 @@
     </div>
   </div>
 
+  <section class="round-settings" aria-label="Meta de la partida" aria-live="polite">
+    <div>
+      <span class="round-settings__eyebrow">Meta de la partida</span>
+    </div>
+    <div class="round-settings__choices" role="group" aria-label="Casilla final">
+      @for (position of [10, 15, 20, 25, 30]; track position) {
+        <button type="button" [class.is-selected]="winningPosition() === position" (click)="setWinningPosition(position)" [disabled]="!canManageLobby" [attr.aria-pressed]="winningPosition() === position">
+          {{ position }}
+        </button>
+      }
+    </div>
+  </section>
+
   <div class="players-grid">
     @for (player of players(); track player.playerId; let i = $index) {
       <article class="player-card animate-slide-up" [class.player-card--ready]="player.ready" [style.animation-delay]="(i * 80) + 'ms'">
@@ -54,7 +67,7 @@
           </div>
         </div>
 
-        @if (player.playerId === myId()) {
+        @if (isCurrentPlayer(player)) {
           <button
             type="button"
             class="ready-button"
@@ -86,7 +99,7 @@
   </div>
 
   <footer class="lobby-actions animate-slide-up">
-    @if (isHost()) {
+    @if (canManageLobby) {
       <button type="button" class="btn-primary start-button" (click)="startGame()" [disabled]="!canStartGame()">
         @if (canStartGame()) {
           <span>Comenzar partida</span>

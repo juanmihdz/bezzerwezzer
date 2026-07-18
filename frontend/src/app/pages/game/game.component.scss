@@ -64,19 +64,71 @@
 .board-area { perspective: 75rem; }
 .score-area, .dashboard-area { position: relative; z-index: 2; }
 .score-area::before, .dashboard-area::before { content: ''; position: absolute; z-index: -1; inset: 8% -8%; border-radius: 50%; background: radial-gradient(ellipse, rgb(123 44 255 / .14), transparent 68%); filter: blur(1.5rem); pointer-events: none; }
+.mobile-panel-nav, .mobile-categories-backdrop { display: none; }
 
 @keyframes shell-aura { from { transform: translateX(-50%) scale(.94); opacity: .32; } to { transform: translateX(-50%) scale(1.08); opacity: .56; } }
 
 @media (max-width: 63.9375rem) {
-  :host { overflow: visible; }
+  :host { overflow: visible; touch-action: pan-y; }
+  /* On mobile the game is a continuous document.  Keeping the desktop
+     flex-grow sizing here was reserving a viewport-height block after the
+     content, which produced an empty tail at the end of the page. */
+  .game-shell { min-height: 0; padding-bottom: calc(5.25rem + env(safe-area-inset-bottom)); }
+  .game-shell > main { flex: 0 0 auto; min-height: auto; z-index: auto; }
+  .score-area.mobile-panel-hidden { display: none !important; }
+  .game-header { position: sticky; top: max(.35rem, env(safe-area-inset-top)); z-index: 40; width: fit-content; max-width: calc(100% - 1rem); margin-inline: auto; padding: .25rem .45rem; border: .0625rem solid rgb(191 137 255 / .28); border-radius: 1rem; background: rgb(8 7 24 / .86); box-shadow: 0 .5rem 1.5rem rgb(0 0 0 / .25); backdrop-filter: blur(.75rem); }
+  .tactical-announcement, .rebound-queue { z-index: 50; }
+  #mobile-board, #mobile-categories, #mobile-tactics, #mobile-score { scroll-margin-top: 4.75rem; scroll-margin-bottom: 5.5rem; }
+  #mobile-tactics { display: none; }
+  #mobile-categories {
+    position: fixed;
+    z-index: 55;
+    top: max(.5rem, env(safe-area-inset-top));
+    right: 0;
+    bottom: calc(5.25rem + env(safe-area-inset-bottom));
+    width: min(24rem, calc(100vw - .75rem));
+    padding: 1rem .85rem;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    border: .0625rem solid rgb(191 137 255 / .32);
+    border-right: 0;
+    border-radius: 1.25rem 0 0 1.25rem;
+    background: linear-gradient(145deg, rgb(20 14 48 / .98), rgb(5 7 23 / .98));
+    box-shadow: -1rem 0 2.5rem rgb(0 0 0 / .42), inset 0 .0625rem 0 rgb(255 255 255 / .1);
+    transform: translateX(calc(100% + 1rem));
+    transition: transform 220ms ease-out;
+    pointer-events: none;
+  }
+  #mobile-categories.is-mobile-open { transform: translateX(0); pointer-events: auto; }
+  #mobile-categories > * { min-width: 0; max-width: 100%; }
+  .mobile-categories-backdrop {
+    position: fixed;
+    z-index: 35;
+    inset: 0;
+    display: block;
+    border: 0;
+    background: rgb(2 2 12 / .5);
+    backdrop-filter: blur(.15rem);
+  }
+  .mobile-panel-nav { position: fixed; z-index: 45; right: max(.55rem, env(safe-area-inset-right)); bottom: max(.55rem, env(safe-area-inset-bottom)); left: max(.55rem, env(safe-area-inset-left)); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .35rem; padding: .4rem; border: .0625rem solid rgb(191 137 255 / .3); border-radius: 1.15rem; background: rgb(10 8 28 / .92); box-shadow: 0 .8rem 2rem rgb(0 0 0 / .45), inset 0 .0625rem 0 rgb(255 255 255 / .1); backdrop-filter: blur(1rem); }
+  .mobile-panel-nav button { display: flex; min-height: 3.1rem; flex-direction: column; align-items: center; justify-content: center; gap: .1rem; border: 0; border-radius: .8rem; color: rgb(255 255 255 / .62); background: transparent; font-size: .62rem; font-weight: 850; letter-spacing: .035em; line-height: 1.1; }
+  .mobile-panel-nav button > span:first-child { font-size: 1.05rem; line-height: 1; }
+  .mobile-panel-nav button.is-active { color: white; background: linear-gradient(135deg, rgb(123 44 255 / .48), rgb(255 25 200 / .3)); box-shadow: inset 0 0 0 .0625rem rgb(255 255 255 / .15), 0 .25rem .75rem rgb(123 44 255 / .25); }
+  .mobile-panel-nav .mobile-tactical-action { color: white; }
+  .mobile-panel-nav .mobile-tactical-action--zwap { background: linear-gradient(135deg, rgb(234 88 12 / .8), rgb(251 146 60 / .42)); box-shadow: inset 0 0 0 .0625rem rgb(255 219 174 / .3); }
+  .mobile-panel-nav .mobile-tactical-action--bezzer { background: linear-gradient(135deg, rgb(109 40 217 / .82), rgb(236 72 153 / .4)); box-shadow: inset 0 0 0 .0625rem rgb(233 213 255 / .28); }
+  .mobile-panel-nav .mobile-tactical-action:disabled { color: rgb(255 255 255 / .35); background: rgb(255 255 255 / .05); box-shadow: none; opacity: .72; }
+  .mobile-panel-nav button:focus-visible { outline: .125rem solid var(--color-accent); outline-offset: .125rem; }
   .score-area { height: 10.5rem; }
 }
 
 @media (max-width: 40rem) {
   .score-area { height: 9rem; }
-  .dashboard-area { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+  .dashboard-area { padding-bottom: 0; }
   .game-shell::after, .score-area::before, .dashboard-area::before { display: none; }
   .game-shell { gap: .65rem; padding-inline: 0; }
+  .board-area { min-height: 16rem; }
+  .turn-prep-card { width: min(94%, 24rem); padding: 1rem; }
   .tactical-announcement { top: 3.1rem; }
 }
 .board-area { position: relative; }
@@ -143,6 +195,9 @@
 .zwap-dialog h3 { margin: 0 0 .55rem; color: rgb(255 255 255 / .72); font-size: .75rem; font-weight: 800; letter-spacing: .04em; }
 .zwap-categories, .zwap-players { display: flex; flex-wrap: wrap; gap: .55rem; }
 .zwap-category-choice, .zwap-player-choice { display: inline-flex; align-items: center; gap: .45rem; min-height: 2.7rem; padding: .35rem .5rem; border: 0.0625rem solid rgb(255 255 255 / .12); border-radius: .85rem; color: rgb(255 255 255 / .8); background: rgb(0 0 0 / .16); font-size: .73rem; font-weight: 800; cursor: pointer; transition: border-color 160ms ease, background 160ms ease, transform 160ms ease; }
+.zwap-category-choice { position: relative; }
+.zwap-category-tooltip { position: absolute; z-index: 10; bottom: calc(100% + .45rem); left: 50%; width: max-content; max-width: 12rem; padding: .35rem .55rem; border: .0625rem solid rgb(255 255 255 / .14); border-radius: .45rem; background: rgb(12 9 24 / .97); box-shadow: 0 .5rem 1.25rem rgb(0 0 0 / .35); color: white; font-size: .67rem; line-height: 1.2; opacity: 0; pointer-events: none; transform: translate(-50%, .2rem); transition: opacity 140ms ease, transform 140ms ease; white-space: nowrap; }
+.zwap-category-choice:hover .zwap-category-tooltip, .zwap-category-choice:focus-visible .zwap-category-tooltip { opacity: 1; transform: translate(-50%, 0); }
 .zwap-category-choice:hover:not(:disabled), .zwap-player-choice:hover:not(:disabled) { border-color: rgb(251 146 60 / .65); background: rgb(249 115 22 / .12); transform: translateY(-0.0625rem); }
 .zwap-category-choice.is-selected, .zwap-player-choice.is-selected { border-color: rgb(251 146 60 / .9); background: rgb(249 115 22 / .2); box-shadow: 0 0 0 0.125rem rgb(249 115 22 / .15); }
 .zwap-category-choice:disabled, .zwap-player-choice:disabled { opacity: .32; cursor: not-allowed; }
