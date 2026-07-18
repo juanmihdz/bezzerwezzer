@@ -191,7 +191,14 @@ export class GameStateService {
         this.players.update(players => players.map(player => player.playerId === result.playerId
           ? { ...player, boardPosition: Math.max(0, player.boardPosition + result.points) }
           : player));
-        this.gamePhase.set('TURN_RESULT');
+        // A failed answer with pending rebounds is still the same question.
+        // Keeping ANSWERING here preserves the mounted question modal while
+        // ANSWERING_STARTED only updates the active player and its timer.
+        // Switching briefly to TURN_RESULT would destroy and recreate the
+        // modal, replaying its entrance animation for every rebound.
+        if (!result.reboundContinues) {
+          this.gamePhase.set('TURN_RESULT');
+        }
         break;
       }
 
