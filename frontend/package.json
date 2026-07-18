@@ -23,6 +23,7 @@
     "@tailwindcss/postcss": "^4.3.2",
     "postcss": "^8.5.16",
     "rxjs": "~7.8.0",
+    "sockjs-client": "^1.6.1",
     "tailwindcss": "^4.3.2",
     "tslib": "^2.3.0"
   },
@@ -30,6 +31,7 @@
     "@angular/build": "^22.0.6",
     "@angular/cli": "^22.0.6",
     "@angular/compiler-cli": "^22.0.0",
+    "@types/sockjs-client": "^1.5.4",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2"
   },

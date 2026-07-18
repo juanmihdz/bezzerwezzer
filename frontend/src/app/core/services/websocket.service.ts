@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { RxStomp } from '@stomp/rx-stomp';
+import SockJS from 'sockjs-client';
 import { firstValueFrom, Observable } from 'rxjs';
 import { map, take, timeout } from 'rxjs/operators';
 
@@ -11,6 +12,14 @@ export class WebsocketService {
   private rxStomp: RxStomp;
   private connectedToken = '';
   connectionStatus = signal<'CONNECTED' | 'DISCONNECTED' | 'CONNECTING'>('DISCONNECTED');
+
+  private shouldUseHttpTransport(): boolean {
+    const isIOSWebKit =
+      /iP(?:hone|ad|od)/.test(navigator.userAgent) &&
+      /WebKit/.test(navigator.userAgent);
+
+    return isIOSWebKit;
+  }
 
   constructor() {
     this.rxStomp = new RxStomp();
@@ -41,7 +50,16 @@ export class WebsocketService {
     this.connectionStatus.set('CONNECTING');
     
     this.rxStomp.configure({
-      brokerURL: `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`,
+      // Safari 26 on iOS can leave the WebSocket handshake pending without
+      // reporting a failure, so SockJS never reaches its automatic fallback.
+      // Skip WebSocket there and connect through same-origin HTTP instead.
+      webSocketFactory: () => new SockJS(
+        `${window.location.origin}/ws`,
+        undefined,
+        this.shouldUseHttpTransport()
+          ? { transports: ['xhr-polling'] }
+          : undefined
+      ),
       connectHeaders: {
         Authorization: `Bearer ${token}`
       },

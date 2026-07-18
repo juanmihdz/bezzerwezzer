@@ -1,3 +1,4 @@
+com/bezzerwizzer/config/SockJsProxyAddressFilter$1.class
 com/bezzerwizzer/repository/QuestionRepository.class
 com/bezzerwizzer/model/Category.class
 com/bezzerwizzer/game/GameState$CategoryInfo.class
@@ -35,6 +36,7 @@ com/bezzerwizzer/config/WebSocketConfig.class
 com/bezzerwizzer/websocket/dto/ZwapAction.class
 com/bezzerwizzer/repository/CategoryRepository.class
 com/bezzerwizzer/config/SecurityConfig.class
+com/bezzerwizzer/config/SockJsProxyAddressFilter.class
 com/bezzerwizzer/auth/JwtService.class
 com/bezzerwizzer/game/CategorySlot.class
 com/bezzerwizzer/model/enums/QuestionType.class

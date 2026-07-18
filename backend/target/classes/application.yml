@@ -1,5 +1,8 @@
 server:
   port: 8080
+  # Nginx terminates each SockJS HTTP request on a different upstream socket.
+  # SockJsProxyAddressFilter uses its stable forwarded client address so Spring
+  # can correlate those requests as one session.
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/bezzerwizzer

@@ -6,6 +6,7 @@
 /app/src/main/java/com/bezzerwizzer/config/CorsConfig.java
 /app/src/main/java/com/bezzerwizzer/config/GameTimerConfig.java
 /app/src/main/java/com/bezzerwizzer/config/SecurityConfig.java
+/app/src/main/java/com/bezzerwizzer/config/SockJsProxyAddressFilter.java
 /app/src/main/java/com/bezzerwizzer/config/StompPrincipal.java
 /app/src/main/java/com/bezzerwizzer/config/WebSocketAuthInterceptor.java
 /app/src/main/java/com/bezzerwizzer/config/WebSocketConfig.java
