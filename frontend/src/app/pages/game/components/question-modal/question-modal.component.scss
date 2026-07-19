@@ -1,0 +1,158 @@
+.golden-backdrop {
+  background:
+    radial-gradient(circle at 50% 40%, rgb(246 196 83 / .2), transparent 35%),
+    rgb(3 2 8 / .9);
+}
+
+.golden-question {
+  border-color: rgb(255 215 112 / .85) !important;
+  background:
+    radial-gradient(circle at 50% -10%, rgb(255 218 117 / .18), transparent 40%),
+    linear-gradient(150deg, rgb(45 31 11 / .98), rgb(12 9 20 / .98) 58%, rgb(35 21 8 / .98));
+  box-shadow:
+    0 0 0 .125rem rgb(255 225 139 / .12),
+    0 0 4rem rgb(246 196 83 / .32),
+    0 1.6rem 4rem rgb(0 0 0 / .72) !important;
+}
+
+.golden-question::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: .26;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, #fff4b8 0 .0625rem, transparent .125rem),
+    radial-gradient(circle, #f6c453 0 .0625rem, transparent .125rem);
+  background-position: 0 0, 1.6rem 1.6rem;
+  background-size: 3.2rem 3.2rem;
+}
+
+.golden-question .question-color-bar {
+  position: relative;
+  background: linear-gradient(90deg, #8c5c05, #fff0a8, #e8a91c, #fff0a8, #8c5c05) !important;
+  box-shadow: 0 0 .9rem rgb(255 218 117 / .7);
+}
+
+.golden-title {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  color: #fff5c7;
+}
+
+.golden-title__star {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  place-items: center;
+  border: .0625rem solid rgb(255 239 172 / .72);
+  border-radius: 50%;
+  color: #4a2a00;
+  background: linear-gradient(145deg, #fff7bd, #e9a51c);
+  box-shadow: 0 0 1.6rem rgb(246 196 83 / .5);
+  font-size: 1.75rem;
+}
+
+.golden-title span:not(.golden-title__star) {
+  display: block;
+  color: rgb(255 238 171 / .66);
+  font-size: .65rem;
+  font-weight: 900;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.golden-title h3 {
+  margin: .15rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 3vw, 2rem);
+  font-weight: 950;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.golden-title > strong {
+  padding: .35rem .65rem;
+  border: .0625rem solid rgb(255 240 178 / .5);
+  border-radius: 999rem;
+  color: #3a2100;
+  background: #f6c453;
+  font-size: 1rem;
+}
+
+.golden-rules {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-self: center;
+  justify-content: center;
+  gap: .45rem .75rem;
+  margin: 0 auto 1.7rem;
+  padding: .65rem 1rem;
+  border: .0625rem solid rgb(246 196 83 / .32);
+  border-radius: 999rem;
+  color: rgb(255 248 218 / .72);
+  background: rgb(246 196 83 / .08);
+  font-size: .75rem;
+  letter-spacing: .04em;
+}
+
+.golden-rules strong {
+  color: #fff3bb;
+  text-transform: uppercase;
+}
+
+.golden-question-text {
+  position: relative;
+  color: #fff9df !important;
+  text-shadow: 0 0 1.5rem rgb(246 196 83 / .22);
+}
+
+.golden-submit {
+  border: .0625rem solid #fff0ad;
+  color: #3b2100;
+  background: linear-gradient(135deg, #fff0a8, #f6c453 55%, #d58c0b);
+  box-shadow: 0 .8rem 2rem rgb(197 128 5 / .25), 0 0 1.5rem rgb(246 196 83 / .2);
+}
+
+.golden-submit:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-.125rem) scale(1.02);
+}
+
+@media (max-width: 40rem) {
+  .question-overlay {
+    padding:
+      max(.55rem, env(safe-area-inset-top))
+      max(.55rem, env(safe-area-inset-right))
+      max(.55rem, env(safe-area-inset-bottom))
+      max(.55rem, env(safe-area-inset-left));
+  }
+  .question-dialog {
+    max-height: calc(100dvh - max(1.1rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    border-radius: 1.25rem;
+  }
+  .question-body { padding: 1rem; }
+  .question-heading { gap: .65rem; margin-bottom: 1rem; }
+  .question-heading > div:first-child { min-width: 0; }
+  .question-free-text { padding: 1rem; font-size: 1.25rem; }
+  .golden-title__star { width: 2.8rem; height: 2.8rem; font-size: 1.35rem; }
+  .golden-title { gap: .6rem; }
+  .golden-title > strong { display: none; }
+  .golden-title h3 { font-size: clamp(1.05rem, 5.5vw, 1.45rem); }
+  .golden-rules { margin-bottom: 1rem; padding: .55rem .7rem; border-radius: 1rem; font-size: .68rem; }
+}
+
+@media (max-height: 43rem) and (orientation: landscape) {
+  .question-dialog { max-height: calc(100dvh - 1rem); }
+  .question-body { padding: .8rem 1rem; }
+  .question-heading { margin-bottom: .7rem; }
+  .golden-rules { margin-bottom: .7rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .golden-submit { transition: none; }
+}

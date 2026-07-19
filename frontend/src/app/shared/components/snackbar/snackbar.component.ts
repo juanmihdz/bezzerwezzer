@@ -7,7 +7,7 @@ import { SnackbarService, SnackbarType } from '../../../core/services/snackbar.s
   standalone: true,
   imports: [],
   templateUrl: './snackbar.component.html',
-  styleUrls: ['./snackbar.component.scss'],
+  styleUrl: './snackbar.component.scss',
 })
 export class SnackbarComponent {
   readonly snackbarService = inject(SnackbarService);

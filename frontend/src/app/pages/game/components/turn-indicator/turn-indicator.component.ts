@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -6,11 +6,12 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './turn-indicator.component.html',
-  styleUrl: './turn-indicator.component.scss'
+  styleUrl: './turn-indicator.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TurnIndicatorComponent {
-  @Input() playerName: string = '';
-  @Input() playerColor: string = '';
-  @Input() isMyTurn: boolean = false;
-  @Input() phaseText: string = 'FASE DE JUEGO';
+  readonly playerName = input('');
+  readonly playerColor = input('');
+  readonly isMyTurn = input(false);
+  readonly phaseText = input('FASE DE JUEGO');
 }

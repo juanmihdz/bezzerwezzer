@@ -55,4 +55,32 @@ public class LobbyWebSocketController {
             messagingTemplate.convertAndSend("/topic/room/" + code, new GameEvent("ROOM_STATE", room));
         }
     }
+
+    @MessageMapping("/room/{code}/golden-question")
+    public void setGoldenQuestionEnabled(
+            @DestinationVariable String code, Principal principal, Map<String, Boolean> payload) {
+        if (principal instanceof com.bezzerwizzer.config.StompPrincipal sp) {
+            Boolean enabled = payload.get("enabled");
+            if (enabled == null) {
+                throw new IllegalArgumentException("Indica si se jugará la Pregunta Dorada");
+            }
+            GameRoom room = roomService.setGoldenQuestionEnabled(code, sp.playerId(), enabled);
+            messagingTemplate.convertAndSend("/topic/room/" + code, new GameEvent("ROOM_STATE", room));
+        }
+    }
+
+    @MessageMapping("/room/{code}/kick")
+    public void kickPlayer(@DestinationVariable String code, Principal principal, Map<String, String> payload) {
+        if (principal instanceof com.bezzerwizzer.config.StompPrincipal sp) {
+            String playerId = payload.get("playerId");
+            if (playerId == null || playerId.isBlank()) {
+                throw new IllegalArgumentException("Indica el jugador que quieres expulsar");
+            }
+
+            GameRoom room = roomService.kickPlayer(code, sp.playerId(), playerId);
+            messagingTemplate.convertAndSendToUser(playerId, "/queue/personal",
+                new GameEvent("KICKED_FROM_ROOM", Map.of("roomCode", code)));
+            messagingTemplate.convertAndSend("/topic/room/" + code, new GameEvent("ROOM_STATE", room));
+        }
+    }
 }

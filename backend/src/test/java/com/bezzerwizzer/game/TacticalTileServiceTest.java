@@ -41,6 +41,20 @@ class TacticalTileServiceTest {
     }
 
     @Test
+    void onlyPlayersWhoPlayBezzerwizzerEnterTheReboundQueue() {
+        GameRoom room = roomIn(GamePhase.PLAYING);
+        room.addPlayer(player("challenger", category("A"), 1));
+        room.addPlayer(player("active", category("B"), 1));
+        room.addPlayer(player("observer", category("C"), 1));
+        room.getTurnOrder().add("active");
+
+        service.processBezzerwizzer(room, "challenger", "active");
+
+        assertEquals(java.util.List.of("challenger"), room.getBezzerwizzerQueue());
+        assertFalse(room.getBezzerwizzerQueue().contains("observer"));
+    }
+
+    @Test
     void tacticalActionsRejectMissingTargetsWithoutLeakingNullPointerExceptions() {
         GameRoom zwapRoom = roomIn(GamePhase.ZWAP);
         zwapRoom.addPlayer(player("a", category("A"), 1));

@@ -9,7 +9,8 @@ import { CategoryBadgeComponent } from '../../../../shared/components/category-b
   selector: 'app-question-modal',
   standalone: true,
   imports: [CommonModule, FormsModule, TimerComponent, CategoryBadgeComponent],
-  templateUrl: './question-modal.component.html'
+  templateUrl: './question-modal.component.html',
+  styleUrl: './question-modal.component.scss'
 })
 export class QuestionModalComponent implements OnChanges {
   @Input() question: Question | null = null;
@@ -22,6 +23,7 @@ export class QuestionModalComponent implements OnChanges {
   @Input() answeringPlayerName = '';
   @Input() isReboundTurn = false;
   @Input() reboundQueue: string[] = [];
+  @Input() isGoldenQuestion = false;
   @Output() onAnswer = new EventEmitter<AnswerPayload>();
   @Output() onBezzerwizzer = new EventEmitter<void>();
 

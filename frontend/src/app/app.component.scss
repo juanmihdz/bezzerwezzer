@@ -1,5 +1,12 @@
 :host { display: block; min-height: 100dvh; }
 .app-universe { min-height: 100dvh; }
+.app-content {
+  padding:
+    max(.75rem, env(safe-area-inset-top))
+    max(.75rem, env(safe-area-inset-right))
+    max(.75rem, env(safe-area-inset-bottom))
+    max(.75rem, env(safe-area-inset-left));
+}
 
 .app-universe::before,
 .app-universe::after { content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none; }
@@ -35,4 +42,22 @@
 @keyframes flare-breathe { 0%, 100% { opacity: .12; } 50% { opacity: .32; } }
 
 @media (max-width: 40rem) { .cosmic-nebula { filter: blur(2.625rem); opacity: .16; } .cosmic-stars--near, .cosmic-dust--two, .cosmic-lattice { display: none; } .cosmic-energy-ribbon { opacity: .1; } .cosmic-flare { opacity: .12; transform: scale(.55); } }
+@media (min-width: 40rem) {
+  .app-content {
+    padding:
+      max(1.25rem, env(safe-area-inset-top))
+      max(1.25rem, env(safe-area-inset-right))
+      max(1.25rem, env(safe-area-inset-bottom))
+      max(1.25rem, env(safe-area-inset-left));
+  }
+}
+@media (min-width: 64rem) {
+  .app-content {
+    padding:
+      max(1.5rem, env(safe-area-inset-top))
+      max(2rem, env(safe-area-inset-right))
+      max(1.5rem, env(safe-area-inset-bottom))
+      max(2rem, env(safe-area-inset-left));
+  }
+}
 @media (prefers-reduced-motion: reduce) { .cosmic-atmosphere::before, .cosmic-nebula, .cosmic-energy-ribbon, .cosmic-stars, .cosmic-dust, .cosmic-flare { animation: none; } }

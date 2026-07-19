@@ -12,7 +12,7 @@ Este documento describe el comportamiento que actualmente aplica el servidor. Es
 
 ## Objetivo y puntuación
 
-- El tablero tiene **30 casillas**. Al llegar o superar la casilla 30 se gana inmediatamente.
+- El tablero tiene **30 casillas**. Al llegar o superar la casilla 30 se gana al resolverse la pregunta en curso, incluida una Pregunta Dorada.
 - Los puntos desplazan al jugador ese número de casillas. Una penalización no puede dejar una posición por debajo de 0.
 - El jugador del turno que acierta gana el valor asignado a su categoría (1, 2, 3 o 4).
 - Las preguntas de opción múltiple se validan contra la letra de la opción correcta; las de texto libre pasan por `AnswerValidator`.
@@ -23,7 +23,17 @@ Este documento describe el comportamiento que actualmente aplica el servidor. Es
 2. Cada jugador debe asignar exactamente una vez los valores **1, 2, 3 y 4** a sus cuatro categorías. La confirmación es obligatoria para todos.
 3. El servidor ordena las categorías por valor. Se juega primero la categoría de 1 punto de todos los jugadores, después la de 2, la de 3 y finalmente la de 4.
 4. El orden de los jugadores se fija al comienzo del ciclo según su posición en el tablero, de menor a mayor. En empate, se conserva el orden de la colección interna de jugadores.
-5. Tras jugar las cuatro categorías de todos, el servidor entrega cuatro categorías nuevas y repone las fichas tácticas.
+5. Tras jugar las cuatro categorías de todos se celebra una **Pregunta Dorada** si el anfitrión activó el bonus. Después, el servidor entrega cuatro categorías nuevas y repone las fichas tácticas.
+
+## Pregunta Dorada
+
+- Es una regla opcional, activada por defecto. El anfitrión puede activarla o desactivarla únicamente desde la sala de espera.
+- Cuando está activada, aparece al terminar cada ciclo completo de cuatro categorías y antes de la siguiente asignación.
+- Es siempre una pregunta de escritura libre y la reciben todos los jugadores simultáneamente.
+- Cada jugador dispone de una sola respuesta y de **30 segundos** para enviarla.
+- El primer acierto procesado por el servidor gana **2 puntos**. En ese momento se cierra el bonus para todos.
+- Si todos fallan o se agota el tiempo, el bonus queda desierto y no se conceden puntos.
+- No se pueden usar ZWAP, BEZZER ni rebotes durante esta fase.
 
 ## Tiempos y turnos
 
@@ -62,9 +72,12 @@ Las fichas se restauran al comenzar cada nuevo ciclo de cuatro categorías: **1 
 | `CATEGORY_ASSIGNMENT` | Asignar 1, 2, 3 y 4 una vez cada uno |
 | `PLAYING` | Preparación, ZWAP, BEZZER y voto de paso |
 | `ANSWERING` | Responder el jugador activo; los retadores tempranos pueden guardar su respuesta |
+| `ROUND_END` | Pausa breve antes del bonus opcional o del ciclo siguiente |
+| `GOLDEN_QUESTION` | Todos escriben una única respuesta; gana el primer acierto |
+| `GOLDEN_RESULT` | Se muestra el ganador del bonus o que quedó desierto |
 | `GAME_OVER` | La partida terminó al alcanzar una posición de 30 |
 
-Los valores `BEZZERWIZZER_WINDOW`, `TURN_RESULT` y `ROUND_END` existen en el enum del protocolo, pero el flujo principal actual opera con `PLAYING`, `ANSWERING` y el reinicio inmediato de categorías. No deben usarse en una nueva interfaz como si fueran transiciones emitidas de forma estable sin revisar antes el backend.
+Los valores `BEZZERWIZZER_WINDOW` y `TURN_RESULT` existen en el enum del protocolo, pero no todos se emiten como transiciones estables. Deben revisarse en el backend antes de basar una nueva interfaz en ellos.
 
 ## Notas de mantenimiento
 

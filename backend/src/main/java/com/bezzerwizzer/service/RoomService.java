@@ -101,6 +101,37 @@ public class RoomService {
         return room;
     }
 
+    public synchronized GameRoom setGoldenQuestionEnabled(String roomCode, String playerId, boolean enabled) {
+        GameRoom room = getRoom(roomCode);
+        if (room.getPhase() != GamePhase.LOBBY) {
+            throw new IllegalStateException("La Pregunta Dorada solo se puede configurar en la sala de espera");
+        }
+        if (!playerId.equals(room.getHostPlayerId())) {
+            throw new IllegalStateException("Solo el anfitrión puede configurar la Pregunta Dorada");
+        }
+        room.setGoldenQuestionEnabled(enabled);
+        return room;
+    }
+
+    public synchronized GameRoom kickPlayer(String roomCode, String hostPlayerId, String playerId) {
+        GameRoom room = getRoom(roomCode);
+        if (room.getPhase() != GamePhase.LOBBY) {
+            throw new IllegalStateException("Solo se puede expulsar jugadores en la sala de espera");
+        }
+        if (!hostPlayerId.equals(room.getHostPlayerId())) {
+            throw new IllegalStateException("Solo el anfitrión puede expulsar jugadores");
+        }
+        if (hostPlayerId.equals(playerId)) {
+            throw new IllegalArgumentException("El anfitrión no puede expulsarse a sí mismo");
+        }
+        if (!room.getPlayers().containsKey(playerId)) {
+            throw new IllegalStateException("El jugador no pertenece a la sala");
+        }
+
+        room.removePlayer(playerId);
+        return room;
+    }
+
     public void removePlayerFromRoom(String roomCode, String playerId) {
         GameRoom room = getRoom(roomCode);
         room.removePlayer(playerId);

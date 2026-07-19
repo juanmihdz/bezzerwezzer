@@ -99,7 +99,7 @@ export class BoardComponent implements AfterViewInit, OnChanges, OnDestroy {
   }
 
   // Pawns use the same coordinate system as the cells. Only occupants of the
-  // same cell receive a small pixel offset, so a lone pawn stays centered.
+  // same cell receive a small relative offset, so a lone pawn stays centered.
   getPawnPosition(player: PlayerInfo): { x: number; y: number; offsetX: number; offsetY: number } {
     const pos = this.normalizePosition(player.boardPosition);
     const baseCoord = this.calculateCellCoordinates(pos);
@@ -114,7 +114,7 @@ export class BoardComponent implements AfterViewInit, OnChanges, OnDestroy {
     }
 
     const angle = -Math.PI / 2 + (Math.PI * 2 * occupantIndex) / count;
-    const radius = count === 2 ? 8 : 10;
+    const radius = count === 2 ? 0.5 : 0.625;
     return {
       ...baseCoord,
       offsetX: Math.cos(angle) * radius,

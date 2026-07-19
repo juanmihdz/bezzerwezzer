@@ -70,7 +70,7 @@ Habitat 67|Moshe Safdie`
   },
   {
     category: 'Ciencia',
-    direct: ([discovery]) => `¿Qué científico o científica se asocia principalmente con «${discovery}»?`,
+    direct: ([discovery]) => `¿Qué científico se asocia con «${discovery}»?`,
     inverse: ([discovery, scientist]) => `¿Cuál de estos hallazgos o teorías se asocia con ${scientist}?`,
     pairs: `teoría de la relatividad|Albert Einstein
 ley de la gravitación universal|Isaac Newton
@@ -310,9 +310,9 @@ Patria|Fernando Aramburu`
   },
   {
     category: 'Matemáticas',
-    direct: ([description]) => `¿Qué concepto matemático corresponde a «${description}»?`,
+    direct: ([description]) => `¿Qué concepto matemático es «${description}»?`,
     inverse: ([description, concept]) => `¿Cuál de estas descripciones define ${concept}?`,
-    pairs: `relación a² + b² = c² en un triángulo rectángulo|teorema de Pitágoras
+    pairs: `relación de los lados de un triángulo rectángulo|teorema de Pitágoras
 número divisible únicamente por 1 y por sí mismo|número primo
 resultado de una multiplicación|producto
 resultado de una división|cociente
@@ -370,7 +370,7 @@ Hit Me Hard and Soft|Billie Eilish`
   },
   {
     category: 'Naturaleza',
-    direct: ([clue]) => `¿Qué animal encaja con esta descripción: «${clue}»?`,
+    direct: ([clue]) => `¿Qué animal ${clue}?`,
     inverse: ([clue, animal]) => `¿Cuál de estas curiosidades corresponde al ${animal}?`,
     pairs: `es el animal más grande del planeta|ballena azul
 es el animal terrestre más rápido|guepardo
@@ -525,24 +525,24 @@ Báb|fe bahá’í`
     pairs: `corazón|bombear la sangre por el cuerpo
 pulmones|intercambiar oxígeno y dióxido de carbono
 riñones|filtrar la sangre y producir orina
-hígado|procesar nutrientes y eliminar sustancias tóxicas
-estómago|iniciar la digestión de los alimentos con ácidos y enzimas
+hígado|procesar nutrientes y eliminar toxinas
+estómago|digerir alimentos con ácidos y enzimas
 intestino delgado|absorber la mayor parte de los nutrientes
 intestino grueso|absorber agua y formar las heces
-cerebro|coordinar el pensamiento, los sentidos y el movimiento
-piel|proteger el cuerpo y ayudar a regular la temperatura
-páncreas|producir enzimas digestivas y hormonas como la insulina
+cerebro|coordinar sentidos, pensamiento y movimiento
+piel|proteger el cuerpo y regular la temperatura
+páncreas|producir enzimas digestivas e insulina
 tiroides|regular el metabolismo mediante hormonas
 vejiga|almacenar la orina antes de expulsarla
-diafragma|facilitar la entrada y salida de aire al respirar
-retina|detectar la luz y convertirla en señales nerviosas
+diafragma|facilitar la respiración
+retina|convertir la luz en señales nerviosas
 cóclea|transformar vibraciones en señales auditivas
 glóbulos rojos|transportar oxígeno por la sangre
 glóbulos blancos|defender el organismo frente a infecciones
 plaquetas|ayudar a coagular la sangre
 insulina|disminuir la glucosa sanguínea
 melatonina|regular el ciclo de sueño y vigilia
-mielina|acelerar la conducción de los impulsos nerviosos
+mielina|acelerar los impulsos nerviosos
 osteoclasto|reabsorber tejido óseo
 nodo sinoauricular|iniciar normalmente el ritmo cardíaco
 hipocampo|participar en la consolidación de la memoria
@@ -663,16 +663,11 @@ if (banks.length !== 20 || curated.length !== 500) {
   throw new Error(`Expected 20 categories and 500 curated questions; got ${banks.length} and ${curated.length}`);
 }
 
-const externalPath = fileURLToPath(new URL('./question-bank.json', import.meta.url));
-const external = JSON.parse(readFileSync(externalPath, 'utf8')).map(row => ({
-  ...row,
-  answer: row.choices[row.correctOption.charCodeAt(0) - 65],
-}));
-const questions = [...curated, ...external];
+const questions = curated;
 const answerPools = groupBy(questions, row => row.category);
 
 for (const row of questions) {
-  let choices = row.choices ? [...row.choices] : [row.answer];
+  let choices = [row.answer];
   const used = new Set(choices.map(normalize));
   const candidates = answerPools.get(row.category)
     .map(candidate => candidate.answer)
@@ -688,17 +683,15 @@ for (const row of questions) {
   if (choices.length !== 4 || used.size !== 4) {
     throw new Error(`Could not build four distinct choices for: ${row.question}`);
   }
-  if (!row.choices) {
-    const shift = Number.parseInt(hash(row.question).slice(0, 2), 16) % 4;
-    choices = [...choices.slice(shift), ...choices.slice(0, shift)];
-  }
+  const shift = Number.parseInt(hash(row.question).slice(0, 2), 16) % 4;
+  choices = [...choices.slice(shift), ...choices.slice(0, shift)];
   row.choices = choices;
   row.correctOption = String.fromCharCode(65 + choices.findIndex(choice => normalize(choice) === normalize(row.answer)));
 }
 
 const counts = groupBy(questions, row => row.category);
-if (questions.length !== 5000 || categories.some(([name]) => counts.get(name)?.length !== 250)) {
-  throw new Error(`Expected 5,000 questions and 250 per category; got ${questions.length}`);
+if (questions.length !== 500 || categories.some(([name]) => counts.get(name)?.length !== 25)) {
+  throw new Error(`Expected 500 questions and 25 per category; got ${questions.length}`);
 }
 
 // Exactly 20% FREE_TEXT in every category, while preserving the 80/20
@@ -709,13 +702,13 @@ for (const categoryQuestions of counts.values()) {
       .filter(row => row.difficulty === difficulty)
       .sort((a, b) => {
         // Free-text answers must be practical to type, not essay-length choices.
-        const aSuitable = a.answer.length <= 80 ? 0 : 1;
-        const bSuitable = b.answer.length <= 80 ? 0 : 1;
+        const aSuitable = a.answer.length <= 45 ? 0 : 1;
+        const bSuitable = b.answer.length <= 45 ? 0 : 1;
         return aSuitable - bSuitable
           || hash(`free:${a.question}`).localeCompare(hash(`free:${b.question}`));
       });
-    const freeTextCount = difficulty === 'MEDIUM' ? 40 : 10;
-    if (difficultyQuestions.filter(row => row.answer.length <= 80).length < freeTextCount) {
+    const freeTextCount = difficulty === 'MEDIUM' ? 4 : 1;
+    if (difficultyQuestions.filter(row => row.answer.length <= 45).length < freeTextCount) {
       throw new Error(`${categoryQuestions[0].category}: not enough short answers for FREE_TEXT`);
     }
     difficultyQuestions.forEach((row, index) => {
@@ -727,17 +720,166 @@ for (const categoryQuestions of counts.values()) {
 for (const [category, categoryQuestions] of counts) {
   const multipleChoice = categoryQuestions.filter(row => row.questionType === 'MULTIPLE_CHOICE');
   const freeText = categoryQuestions.filter(row => row.questionType === 'FREE_TEXT');
-  if (multipleChoice.length !== 200 || freeText.length !== 50) {
-    throw new Error(`${category}: expected 200 multiple-choice and 50 free-text questions`);
+  if (multipleChoice.length !== 20 || freeText.length !== 5) {
+    throw new Error(`${category}: expected 20 multiple-choice and 5 free-text questions`);
   }
-  if (freeText.some(row => !row.answer.trim() || row.answer.length > 80)) {
-    throw new Error(`${category}: FREE_TEXT answers must contain 1-80 characters`);
+  if (freeText.some(row => !row.answer.trim() || row.answer.length > 45)) {
+    throw new Error(`${category}: FREE_TEXT answers must contain 1-45 characters`);
   }
   for (const rows of [multipleChoice, freeText]) {
     const hard = rows.filter(row => row.difficulty === 'HARD').length;
     if (hard !== rows.length / 5) {
       throw new Error(`${category}: difficulty ratio is not 20% HARD for ${rows[0]?.questionType}`);
     }
+  }
+}
+
+const forbiddenDisplaySymbols = /[≤≥≠≈√∑∫×÷→←↔±∞²³⁰¹⁴⁵⁶⁷⁸⁹^]/u;
+const architectureTerms = /arquitect|edificio|catedral|palacio|torre|iglesia|teatro|museo|constru|diseñ|coliseo|puente|castillo|templo|monumento|fachada|gótico|románico/iu;
+const reclassifyExternal = (row) => {
+  const question = row.question;
+  let category = row.category;
+  if (category === 'Arquitectura') {
+    if (/escritor|escribió|obra literaria|poeta/iu.test(question)) category = 'Literatura';
+    else if (/queso|paella|crepe|chef|ingrediente|comió/iu.test(question)) category = 'Gastronomía';
+    else if (/idioma|lengua minoritaria/iu.test(question)) category = 'Idiomas';
+    else if (/bandera|centro vasco|dónde (?:está|queda|nació)/iu.test(question)
+             && !architectureTerms.test(question)) category = 'Geografía';
+    else if (/dios|diosa|Cronus|Apolo|Aquiles/iu.test(question)) category = 'Religión';
+    else if (/bertsolari|Bertsolaritza/iu.test(question)) category = 'Música';
+  }
+  if (category === 'Matemáticas') {
+    if (/canci|álbum|discografía/iu.test(question)) category = 'Música';
+    else if (/MLB|carreras profesionales|deportista/iu.test(question)) category = 'Deportes';
+    else if (/película|Avengers|taquilla|recaud/iu.test(question)) category = 'Cine';
+  }
+  if (category === 'Negocios') {
+    if (/película|animación|Walt Disney/iu.test(question)) category = 'Cine';
+    else if (/manga|copias vendidas/iu.test(question)) category = 'Pop Culture';
+    else if (/ruta marítima|civilización antigua/iu.test(question)
+             && !/bancario|comercio|econom/iu.test(question)) category = 'Historia';
+  }
+  if (category === 'Política' && /mariposa|animal|migración.*invierno/iu.test(question)) {
+    category = 'Naturaleza';
+  }
+  return {...row, category};
+};
+
+const categoryNames = new Set(categories.map(([name]) => name));
+const sourcePriority = new Map([
+  ['HF Trivia Single Choice', 0],
+  ['MMMLU', 1],
+  ['BertaQA', 2],
+]);
+const readExternal = (filename) => JSON.parse(readFileSync(
+  fileURLToPath(new URL(filename, import.meta.url)),
+  'utf8',
+));
+const externalCandidates = [
+  ...readExternal('./hf-question-bank.json'),
+  ...readExternal('./question-bank.json'),
+]
+  .map(reclassifyExternal)
+  .filter(row =>
+    categoryNames.has(row.category)
+    && /^[A-D]$/.test(row.correctOption)
+    && row.question.length <= 100
+    && row.choices.length === 4
+    && row.choices.every(choice => choice.length <= 45)
+    && new Set(row.choices.map(normalize)).size === 4
+    && (row.category !== 'Arquitectura'
+      || (architectureTerms.test(row.question)
+        && !/Redux|Node\.js|procesador|culturista|compost/iu.test(row.question)))
+    && !row.question.endsWith('…')
+    && row.question !== 'En Matemáticas Védicas?'
+    && row.question !== 'El modelo de empresa social del sector privado.'
+    && ![row.question, ...row.choices].some(value => forbiddenDisplaySymbols.test(value)))
+  .map(row => ({
+    ...row,
+    answer: row.choices[row.correctOption.charCodeAt(0) - 65],
+  }))
+  .sort((a, b) =>
+    (sourcePriority.get(a.source) ?? 99) - (sourcePriority.get(b.source) ?? 99)
+    || hash(`external:${a.question}`).localeCompare(hash(`external:${b.question}`)));
+
+// Prefer the newly classified source, then MMMLU, and use display-safe BertaQA
+// rows only as a final fallback. Duplicate facts are removed before balancing.
+const usedExternalQuestions = new Set(curated.map(row => normalize(row.question)));
+const externalByCategory = new Map(categories.map(([name]) => [name, []]));
+for (const row of externalCandidates) {
+  const key = normalize(row.question);
+  if (usedExternalQuestions.has(key)) continue;
+  usedExternalQuestions.add(key);
+  externalByCategory.get(row.category).push(row);
+}
+
+// Some academic categories have fewer short questions than the cultural ones.
+// Counts stay in multiples of five so every category can preserve 20% HARD,
+// while all categories receive at least 45 external FREE_TEXT questions.
+const selectedExternalCounts = new Map();
+for (const [category, rows] of externalByCategory) {
+  const available = Math.floor(rows.length / 5) * 5;
+  if (available < 45) {
+    throw new Error(`${category}: only ${rows.length} display-safe external questions`);
+  }
+  selectedExternalCounts.set(category, Math.min(225, available));
+}
+let selectedExternalTotal = [...selectedExternalCounts.values()]
+  .reduce((total, count) => total + count, 0);
+while (selectedExternalTotal < 4500) {
+  let advanced = false;
+  for (const [category, rows] of externalByCategory) {
+    const current = selectedExternalCounts.get(category);
+    const available = Math.floor(rows.length / 5) * 5;
+    if (current + 5 <= available && selectedExternalTotal + 5 <= 4500) {
+      selectedExternalCounts.set(category, current + 5);
+      selectedExternalTotal += 5;
+      advanced = true;
+    }
+  }
+  if (!advanced) {
+    throw new Error(`Only ${selectedExternalTotal} balanced external questions are available`);
+  }
+}
+
+for (const [category, rows] of externalByCategory) {
+  const selected = rows.slice(0, selectedExternalCounts.get(category));
+  const ranked = selected.sort((a, b) =>
+    hash(`free:${a.question}`).localeCompare(hash(`free:${b.question}`)));
+  ranked.forEach((row, index) => {
+    row.questionType = index < 45 ? 'FREE_TEXT' : 'MULTIPLE_CHOICE';
+  });
+  for (const type of ['FREE_TEXT', 'MULTIPLE_CHOICE']) {
+    const typeRows = ranked
+      .filter(row => row.questionType === type)
+      .sort((a, b) => hash(`difficulty:${a.question}`).localeCompare(hash(`difficulty:${b.question}`)));
+    if (typeRows.length % 5 !== 0) {
+      throw new Error(`${category}: ${type} count must be divisible by five`);
+    }
+    typeRows.forEach((row, index) => {
+      row.difficulty = index < typeRows.length / 5 ? 'HARD' : 'MEDIUM';
+    });
+  }
+  questions.push(...ranked);
+}
+
+if (questions.length !== 5000) {
+  throw new Error(`Expected 5,000 combined questions, got ${questions.length}`);
+}
+if (questions.filter(row => row.questionType === 'FREE_TEXT').length !== 1000
+    || questions.filter(row => row.questionType === 'MULTIPLE_CHOICE').length !== 4000) {
+  throw new Error('Expected 1,000 FREE_TEXT and 4,000 MULTIPLE_CHOICE questions');
+}
+
+for (const row of questions) {
+  if (row.question.length > 100) {
+    throw new Error(`Question exceeds 100 characters: ${row.question}`);
+  }
+  if (row.choices.some(choice => choice.length > 45)) {
+    throw new Error(`Choice exceeds 45 characters: ${row.question}`);
+  }
+  if ([row.question, ...row.choices].some(value => forbiddenDisplaySymbols.test(value))) {
+    throw new Error(`Unsupported display symbol detected: ${row.question}`);
   }
 }
 
@@ -785,9 +927,11 @@ const categorySql = categories
 const sql = `-- ============================================================
 -- Bezzerwizzer Online — banco curado en español
 -- Generated by database/generate-question-seed.mjs
--- 20 categorías × 250 preguntas = 5,000 preguntas
--- 80% MULTIPLE_CHOICE / 20% FREE_TEXT
+-- 5.000 preguntas: 1.000 FREE_TEXT + 4.000 MULTIPLE_CHOICE
+-- 50 preguntas FREE_TEXT por categoría
 -- 20% HARD / 80% MEDIUM en ambos formatos
+-- Distractores de la misma categoría
+-- Preguntas <= 100 caracteres; respuestas <= 45; sin símbolos incompatibles
 -- ============================================================
 
 BEGIN;
@@ -800,8 +944,7 @@ SET icon = EXCLUDED.icon, color = EXCLUDED.color;
 -- Reemplazo completo solicitado: no se conserva ninguna pregunta anterior.
 DELETE FROM questions;
 
--- Algunas opciones académicas superan 255 caracteres. TEXT también mantiene
--- compatibles las preguntas cortas y evita truncar respuestas.
+-- TEXT mantiene compatibilidad con el esquema anterior.
 ALTER TABLE questions
     ALTER COLUMN option_a TYPE TEXT,
     ALTER COLUMN option_b TYPE TEXT,
@@ -853,23 +996,40 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_questions_unique_text_locale
 DO $$
 DECLARE
     total_count integer;
+    free_text_count integer;
+    multiple_choice_count integer;
     invalid_categories integer;
 BEGIN
     SELECT count(*) INTO total_count FROM questions WHERE locale = 'es';
+    SELECT count(*) FILTER (WHERE question_type = 'FREE_TEXT'),
+           count(*) FILTER (WHERE question_type = 'MULTIPLE_CHOICE')
+    INTO free_text_count, multiple_choice_count
+    FROM questions
+    WHERE locale = 'es';
     SELECT count(*) INTO invalid_categories
     FROM (
         SELECT category_id
         FROM questions
         WHERE locale = 'es'
         GROUP BY category_id
-        HAVING count(*) <> 250
-           OR count(*) FILTER (WHERE question_type = 'MULTIPLE_CHOICE') <> 200
+        HAVING count(*) < 100
+           OR count(*) % 5 <> 0
            OR count(*) FILTER (WHERE question_type = 'FREE_TEXT') <> 50
+           OR count(*) FILTER (
+                WHERE question_type = 'FREE_TEXT' AND difficulty = 'HARD'
+              ) <> 10
+           OR count(*) FILTER (
+                WHERE question_type = 'MULTIPLE_CHOICE' AND difficulty = 'HARD'
+              ) <> count(*) FILTER (WHERE question_type = 'MULTIPLE_CHOICE') / 5
     ) invalid;
 
-    IF total_count <> 5000 OR invalid_categories <> 0 THEN
-        RAISE EXCEPTION 'Invalid question bank: total=%, invalid categories=%',
-            total_count, invalid_categories;
+    IF total_count <> 5000
+       OR free_text_count <> 1000
+       OR multiple_choice_count <> 4000
+       OR invalid_categories <> 0 THEN
+        RAISE EXCEPTION
+            'Invalid question bank: total=%, free=%, test=%, invalid categories=%',
+            total_count, free_text_count, multiple_choice_count, invalid_categories;
     END IF;
 
     IF EXISTS (
@@ -899,6 +1059,22 @@ BEGIN
                OR correct_option IS NOT NULL)
     ) THEN
         RAISE EXCEPTION 'Invalid question bank: malformed free-text question';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM questions
+        WHERE length(question_text) > 100
+           OR GREATEST(
+                length(COALESCE(option_a, '')),
+                length(COALESCE(option_b, '')),
+                length(COALESCE(option_c, '')),
+                length(COALESCE(option_d, ''))
+              ) > 45
+           OR question_text ~ '[≤≥≠≈√∑∫×÷→←↔±∞²³⁰¹⁴⁵⁶⁷⁸⁹^]'
+           OR concat_ws('', option_a, option_b, option_c, option_d)
+              ~ '[≤≥≠≈√∑∫×÷→←↔±∞²³⁰¹⁴⁵⁶⁷⁸⁹^]'
+    ) THEN
+        RAISE EXCEPTION 'Invalid question bank: content exceeds display limits';
     END IF;
 END $$;
 

@@ -22,6 +22,7 @@ export interface Question {
   categoryIcon: string;
   categoryColor: string;
   pointValue: number;
+  golden?: boolean;
 }
 
 export interface AnswerPayload {

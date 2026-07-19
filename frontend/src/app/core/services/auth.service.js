@@ -4,7 +4,7 @@ import * as i0 from "@angular/core";
 import * as i1 from "@angular/common/http";
 export class AuthService {
     http;
-    apiUrl = 'http://localhost:8080/api/auth';
+    apiUrl = `${window.location.origin}/api/auth`;
     playerId = signal('', /* @ts-ignore */
     ...(ngDevMode ? [{ debugName: "playerId" }] : /* istanbul ignore next */ []));
     username = signal('', /* @ts-ignore */

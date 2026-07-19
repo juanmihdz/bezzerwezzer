@@ -1,6 +1,6 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { AnswerResult, BezzerwizzerResult, BezzerwizzerPlayedPayload, GamePhase, GameEvent, GameStatePayload, PlayerEventPayload, PlayerInfo, PlayerStatePayload, CategorySlot, TacticalTiles, TurnStartPayload, ZwapAppliedPayload } from '../../shared/models/game.model';
+import { AnswerResult, BezzerwizzerResult, BezzerwizzerPlayedPayload, GamePhase, GameEvent, GameStatePayload, GoldenQuestionResult, PlayerEventPayload, PlayerInfo, PlayerStatePayload, CategorySlot, TacticalTiles, TurnStartPayload, ZwapAppliedPayload } from '../../shared/models/game.model';
 import { Question } from '../../shared/models/player.model';
 import { AuthService } from './auth.service';
 import { WebsocketService } from './websocket.service';
@@ -19,6 +19,7 @@ export class GameStateService {
   players = signal<PlayerInfo[]>([]);
   hostPlayerId = signal<string>('');
   winningPosition = signal<number>(30);
+  goldenQuestionEnabled = signal<boolean>(true);
   
   // Game Play Signals
   currentQuestion = signal<Question | null>(null);
@@ -40,6 +41,8 @@ export class GameStateService {
   bezzerwizzerPlayers = signal<string[]>([]);
   bezzerwizzerAnswered = signal<string[]>([]);
   tacticalAnnouncement = signal<string | null>(null);
+  goldenQuestionSubmittedPlayerIds = signal<string[]>([]);
+  goldenQuestionResult = signal<GoldenQuestionResult | null>(null);
   private tacticalAnnouncementTimeout?: number;
   
   // Computed State
@@ -95,7 +98,13 @@ export class GameStateService {
   }
 
   initializeLobby(room: unknown, assumeCurrentPlayerIsHost = false): void {
-    const snapshot = room as { roomCode?: string; players?: PlayerInfo[]; hostPlayerId?: string; winningPosition?: number };
+    const snapshot = room as {
+      roomCode?: string;
+      players?: PlayerInfo[];
+      hostPlayerId?: string;
+      winningPosition?: number;
+      goldenQuestionEnabled?: boolean;
+    };
     this.updateRoom({
       ...snapshot,
       hostPlayerId: snapshot.hostPlayerId || (assumeCurrentPlayerIsHost ? this.authService.playerId() : '')
@@ -166,6 +175,34 @@ export class GameStateService {
         break;
       }
 
+      case 'GOLDEN_QUESTION_START': {
+        const golden = event.payload as { question: Question; timeLimit?: number };
+        this.currentQuestion.set(golden.question);
+        this.currentTurnPlayerId.set('');
+        this.currentAnswerPlayerId.set('');
+        this.goldenQuestionSubmittedPlayerIds.set([]);
+        this.goldenQuestionResult.set(null);
+        this.lastAnswerResult.set(null);
+        this.answerResults.set([]);
+        this.gamePhase.set('GOLDEN_QUESTION');
+        this.startTimer(golden.timeLimit ?? 30);
+        this.timerTotal.set(golden.timeLimit ?? 30);
+        this.audioService.playQuestionStart();
+        break;
+      }
+
+      case 'GOLDEN_ANSWERED': {
+        const submitted = event.payload as { playerId: string };
+        this.goldenQuestionSubmittedPlayerIds.update(ids =>
+          ids.includes(submitted.playerId) ? ids : [...ids, submitted.playerId]);
+        break;
+      }
+
+      case 'GOLDEN_QUESTION_RESULT':
+        this.stopTimer();
+        this.goldenQuestionResult.set(event.payload as GoldenQuestionResult);
+        this.gamePhase.set('GOLDEN_RESULT');
+        break;
 
       case 'ANSWERING_STARTED': {
         const answering = event.payload as PlayerEventPayload;
@@ -223,6 +260,7 @@ export class GameStateService {
     this.players.set(playersArray);
     this.hostPlayerId.set(room.hostPlayerId || '');
     this.winningPosition.set(room.winningPosition ?? 30);
+    this.goldenQuestionEnabled.set(room.goldenQuestionEnabled ?? true);
   }
 
   private updateFromGameState(state: GameStatePayload) {
@@ -268,7 +306,13 @@ export class GameStateService {
     this.bezzerwizzerAnswered.set(state.bezzerwizzerAnswered ?? []);
     this.currentRound.set(state.round);
     this.winningPosition.set(state.winningPosition ?? this.winningPosition());
+    this.goldenQuestionEnabled.set(state.goldenQuestionEnabled ?? this.goldenQuestionEnabled());
     this.preparationSkipVotes.set(state.preparationSkipVotes ?? []);
+    this.goldenQuestionSubmittedPlayerIds.set(state.goldenQuestionSubmittedPlayerIds ?? []);
+    if (state.phase === 'GOLDEN_QUESTION' && state.activeQuestion) {
+      this.currentQuestion.set(state.activeQuestion);
+      this.timerTotal.set(30);
+    }
     if (state.timer && state.timer > 0) {
       this.startTimer(state.timer);
     }
@@ -316,6 +360,7 @@ export class GameStateService {
     this.players.set([]);
     this.hostPlayerId.set('');
     this.winningPosition.set(30);
+    this.goldenQuestionEnabled.set(true);
     this.currentQuestion.set(null);
     this.myCategories.set([]);
     this.currentTurnPlayerId.set('');
@@ -330,6 +375,8 @@ export class GameStateService {
     this.bezzerwizzerPlayers.set([]);
     this.bezzerwizzerAnswered.set([]);
     this.tacticalAnnouncement.set(null);
+    this.goldenQuestionSubmittedPlayerIds.set([]);
+    this.goldenQuestionResult.set(null);
     window.clearTimeout(this.tacticalAnnouncementTimeout);
     this.stopTimer();
   }

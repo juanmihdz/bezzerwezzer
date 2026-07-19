@@ -7,7 +7,12 @@ import {
   OnDestroy,
   SimpleChanges,
 } from '@angular/core';
-import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDropList,
+  moveItemInArray,
+} from '@angular/cdk/drag-drop';
 
 import { CategorySlot } from '../../../../shared/models/game.model';
 import { CategoryBadgeComponent } from '../../../../shared/components/category-badge/category-badge.component';
@@ -29,7 +34,6 @@ export class CategorySlotsComponent implements OnChanges, OnDestroy {
   readonly points = [1, 2, 3, 4];
   displaySlots: CategorySlot[] = [];
   draggedIndex: number | null = null;
-  dropTargetIndex: number | null = null;
   showAssignmentHint = false;
   private hintTimeout?: number;
 
@@ -69,39 +73,16 @@ export class CategorySlotsComponent implements OnChanges, OnDestroy {
     return !this.isAssigning && this.slots[this.currentSlotIndex]?.category.id === slot.category.id;
   }
 
-  startDrag(event: DragEvent, index: number): void {
-    if (!this.isAssigning) return;
+  startDrag(index: number): void {
     this.draggedIndex = index;
-    event.dataTransfer?.setData('text/plain', String(index));
-    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
-  }
-
-  allowDrop(event: DragEvent, index: number): void {
-    if (!this.isAssigning || this.draggedIndex === index) return;
-    event.preventDefault();
-    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-    this.dropTargetIndex = index;
-  }
-
-  clearDropTarget(index: number): void {
-    if (this.dropTargetIndex === index) this.dropTargetIndex = null;
-  }
-
-  drop(event: DragEvent, targetIndex: number): void {
-    event.preventDefault();
-    const sourceIndex = this.draggedIndex ?? Number(event.dataTransfer?.getData('text/plain'));
-    if (Number.isInteger(sourceIndex) && sourceIndex !== targetIndex) {
-      this.swapCategories(sourceIndex, targetIndex);
-    }
-    this.endDrag();
   }
 
   endDrag(): void {
     this.draggedIndex = null;
-    this.dropTargetIndex = null;
   }
 
   dropWithCdk(event: CdkDragDrop<CategorySlot[]>): void {
+    this.endDrag();
     if (!this.isAssigning || event.previousIndex === event.currentIndex) return;
     const reordered = [...this.displaySlots];
     moveItemInArray(reordered, event.previousIndex, event.currentIndex);

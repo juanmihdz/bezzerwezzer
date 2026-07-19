@@ -1,13 +1,14 @@
-import { Injectable, signal } from '@angular/core';
+import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RxStomp } from '@stomp/rx-stomp';
 import SockJS from 'sockjs-client';
-import { firstValueFrom, Observable } from 'rxjs';
-import { map, take, timeout } from 'rxjs/operators';
+import { firstValueFrom, map, Observable, take, timeout } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WebsocketService {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly mobileConnectionTimeoutMs = 45_000;
   private rxStomp: RxStomp;
   private connectedToken = '';
@@ -24,12 +25,12 @@ export class WebsocketService {
   constructor() {
     this.rxStomp = new RxStomp();
     
-    this.rxStomp.connected$.subscribe(() => {
+    this.rxStomp.connected$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.connectionStatus.set('CONNECTED');
       console.log('STOMP connected');
     });
 
-    this.rxStomp.stompErrors$.subscribe((error) => {
+    this.rxStomp.stompErrors$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((error) => {
       console.error('STOMP error', error);
     });
   }
@@ -98,7 +99,7 @@ export class WebsocketService {
     );
   }
 
-  send(destination: string, body: any) {
+  send(destination: string, body: unknown): void {
     this.rxStomp.publish({
       destination,
       body: JSON.stringify(body)

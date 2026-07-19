@@ -1,3 +1,5 @@
-com/bezzerwizzer/game/ScoringServiceTest.class
-com/bezzerwizzer/game/TacticalTileServiceTest.class
+com/bezzerwizzer/service/QuestionServiceGoldenQuestionTest.class
 com/bezzerwizzer/service/RoomServiceTest.class
+com/bezzerwizzer/game/ScoringServiceTest.class
+com/bezzerwizzer/service/GameServiceGoldenQuestionTest.class
+com/bezzerwizzer/game/TacticalTileServiceTest.class

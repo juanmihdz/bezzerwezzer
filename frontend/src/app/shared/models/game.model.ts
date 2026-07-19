@@ -1,4 +1,4 @@
-export type GamePhase = 'HOME' | 'LOBBY' | 'CATEGORY_ASSIGNMENT' | 'PLAYING' | 'ZWAP' | 'BEZZERWIZZER_WINDOW' | 'ANSWERING' | 'TURN_RESULT' | 'ROUND_END' | 'GAME_OVER';
+export type GamePhase = 'HOME' | 'LOBBY' | 'CATEGORY_ASSIGNMENT' | 'PLAYING' | 'ZWAP' | 'BEZZERWIZZER_WINDOW' | 'ANSWERING' | 'TURN_RESULT' | 'ROUND_END' | 'GOLDEN_QUESTION' | 'GOLDEN_RESULT' | 'GAME_OVER';
 
 export interface GameEvent {
   type: string;
@@ -19,8 +19,17 @@ export interface GameStatePayload {
   bezzerwizzerAnswered?: string[];
   round: number;
   winningPosition?: number;
+  goldenQuestionEnabled?: boolean;
   timer?: number;
   preparationSkipVotes?: string[];
+  activeQuestion?: import('./player.model').Question | null;
+  goldenQuestionSubmittedPlayerIds?: string[];
+}
+
+export interface GoldenQuestionResult {
+  winnerPlayerId: string | null;
+  points: number;
+  correctAnswer: string;
 }
 
 export interface PlayerStatePayload extends PlayerInfo {
@@ -108,6 +117,7 @@ export interface RoomInfo {
   hostPlayerId: string;
   phase: string;
   winningPosition?: number;
+  goldenQuestionEnabled?: boolean;
 }
 
 export interface PlayerInfo {

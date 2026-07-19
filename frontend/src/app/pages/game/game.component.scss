@@ -126,12 +126,158 @@
   .score-area { height: 9rem; }
   .dashboard-area { padding-bottom: 0; }
   .game-shell::after, .score-area::before, .dashboard-area::before { display: none; }
-  .game-shell { gap: .65rem; padding-inline: 0; }
+  .game-shell { gap: .65rem; padding-inline: 0; padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
   .board-area { min-height: 16rem; }
   .turn-prep-card { width: min(94%, 24rem); padding: 1rem; }
   .tactical-announcement { top: 3.1rem; }
+  .mobile-panel-nav {
+    right: max(.25rem, env(safe-area-inset-right));
+    bottom: max(.25rem, env(safe-area-inset-bottom));
+    left: max(.25rem, env(safe-area-inset-left));
+    gap: .2rem;
+    padding: .3rem;
+  }
+  .mobile-panel-nav button {
+    min-height: 3.25rem;
+    padding-inline: .15rem;
+    font-size: clamp(.52rem, 2.6vw, .62rem);
+  }
+  .answer-result-overlay {
+    padding:
+      max(.65rem, env(safe-area-inset-top))
+      max(.65rem, env(safe-area-inset-right))
+      max(.65rem, env(safe-area-inset-bottom))
+      max(.65rem, env(safe-area-inset-left));
+  }
+  .answer-result-card {
+    max-height: calc(100dvh - 1.3rem);
+    padding: 1.5rem;
+    overflow-y: auto;
+    border-radius: 1.75rem;
+  }
+  .answer-result-card .result-icon {
+    width: 5.25rem;
+    height: 5.25rem;
+    margin-bottom: 1rem;
+  }
+  .answer-result-card .result-icon svg { width: 3.1rem; height: 3.1rem; }
 }
 .board-area { position: relative; }
+
+.golden-result-overlay {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding:
+    max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+  background: radial-gradient(circle at 50% 45%, rgb(246 196 83 / .18), transparent 38%), rgb(2 2 9 / .82);
+  backdrop-filter: blur(1.1rem);
+  animation: game-fade-in .3s ease-out both;
+}
+
+.golden-result-card {
+  position: relative;
+  width: min(100%, 34rem);
+  padding: clamp(2rem, 7vw, 4rem);
+  overflow: hidden;
+  border: .125rem solid rgb(255 225 132 / .72);
+  border-radius: 2.4rem;
+  color: #fff8d8;
+  background: linear-gradient(150deg, rgb(65 42 8 / .98), rgb(12 9 20 / .98) 62%, rgb(49 29 4 / .98));
+  box-shadow: 0 0 4rem rgb(246 196 83 / .3), 0 2rem 5rem rgb(0 0 0 / .65), inset 0 .0625rem 0 rgb(255 255 255 / .2);
+  text-align: center;
+  animation: bounce-in .45s cubic-bezier(.2,.9,.25,1.15) both;
+}
+
+.golden-result-rays {
+  position: absolute;
+  inset: -70%;
+  opacity: .14;
+  background: repeating-conic-gradient(from 0deg, #f6c453 0 8deg, transparent 8deg 18deg);
+  animation: golden-rays 20s linear infinite;
+}
+
+.golden-result-crown {
+  position: relative;
+  display: grid;
+  width: 6rem;
+  height: 6rem;
+  margin: 0 auto 1.2rem;
+  place-items: center;
+  border: .125rem solid #fff0ad;
+  border-radius: 50%;
+  color: #432700;
+  background: linear-gradient(145deg, #fff8c8, #f6c453 58%, #ca7d08);
+  box-shadow: 0 0 2.5rem rgb(246 196 83 / .52);
+  font-size: 3rem;
+}
+
+.golden-result-kicker {
+  position: relative;
+  display: block;
+  margin-bottom: .55rem;
+  color: rgb(255 231 150 / .7);
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+}
+
+.golden-result-card h2 {
+  position: relative;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 6vw, 2.75rem);
+  font-weight: 950;
+  line-height: 1.08;
+}
+
+.golden-result-points {
+  position: relative;
+  margin: 1rem 0 1.4rem;
+  color: #f6c453;
+  font-size: 2rem;
+  font-weight: 950;
+  text-shadow: 0 0 1.25rem rgb(246 196 83 / .38);
+}
+
+.golden-result-empty {
+  position: relative;
+  margin: 1rem 0 1.4rem;
+  color: rgb(255 248 218 / .68);
+}
+
+.golden-result-answer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  padding: 1rem;
+  border: .0625rem solid rgb(246 196 83 / .25);
+  border-radius: 1rem;
+  background: rgb(246 196 83 / .08);
+}
+
+.golden-result-answer span {
+  color: rgb(255 234 164 / .62);
+  font-size: .65rem;
+  font-weight: 850;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.golden-result-answer strong { color: white; font-size: 1.2rem; }
+
+@keyframes golden-rays { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .golden-result-rays { animation: none; }
+}
 
 .volume-control { position: relative; display: inline-flex; }
 .volume-button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.35rem; padding: .55rem .82rem; color: rgb(255 255 255 / .9); border: 0.0625rem solid rgb(255 255 255 / .15); border-radius: 62.4375rem; background: rgb(10 8 24 / .72); box-shadow: inset 0 0.0625rem 0 rgb(255 255 255 / .09), 0 0.5rem 1.375rem rgb(0 0 0 / .2); backdrop-filter: blur(0.75rem); cursor: pointer; font-size: .72rem; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; transition: transform 180ms ease, border-color 180ms ease, background 180ms ease; }
@@ -206,5 +352,30 @@
 .zwap-dialog__actions { display: flex; justify-content: flex-end; gap: .65rem; padding: 1rem 1.2rem; border-top: 0.0625rem solid rgb(255 255 255 / .1); }
 .zwap-cancel { padding: .65rem .9rem; border: 0.0625rem solid rgb(255 255 255 / .14); border-radius: .75rem; color: rgb(255 255 255 / .72); font-size: .82rem; font-weight: 800; cursor: pointer; }
 .zwap-confirm { min-height: 2.7rem; padding: .55rem 1rem; border-radius: .75rem; font-size: .82rem; }
+
+@media (max-width: 40rem) {
+  .zwap-overlay {
+    padding:
+      max(.55rem, env(safe-area-inset-top))
+      max(.55rem, env(safe-area-inset-right))
+      max(.55rem, env(safe-area-inset-bottom))
+      max(.55rem, env(safe-area-inset-left));
+  }
+  .zwap-dialog {
+    max-height: calc(100dvh - max(1.1rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    border-radius: 1.15rem;
+  }
+  .zwap-dialog__header,
+  .zwap-dialog__content,
+  .zwap-dialog__actions { padding-inline: .85rem; }
+  .zwap-dialog__actions > button { flex: 1; min-width: 0; }
+}
+
+@media (max-height: 43rem) and (orientation: landscape) {
+  .game-shell { padding-bottom: calc(4.75rem + env(safe-area-inset-bottom)); }
+  .board-area { min-height: 13rem; }
+  .mobile-panel-nav button { min-height: 2.8rem; }
+  .game-controls { display: none; }
+}
 
 @media (prefers-reduced-motion: reduce) { .game-shell::before { animation: none; } }

@@ -1,16 +1,36 @@
 # Fuentes del banco de preguntas
 
-El banco de 5.000 preguntas combina 500 preguntas curadas en el proyecto con
-4.500 preguntas independientes procedentes de estos conjuntos públicos:
+El banco activo contiene 5.000 preguntas en español:
 
-- **MMMLU**, configuración `ES_LA`: traducción profesional al español
-  latinoamericano del conjunto MMLU. Licencia MIT.
+- 500 preguntas directas curadas en el proyecto;
+- preguntas de opción múltiple de **MMMLU**, configuración `ES_LA`;
+- preguntas temáticas de **Trivia Single Choice**, traducidas localmente;
+- una selección final de filas cortas de **BertaQA**.
+
+Fuentes públicas de Hugging Face:
+
+- **MMMLU** — licencia MIT:
   <https://huggingface.co/datasets/openai/MMMLU>
-- **BertaQA**, configuración `en`: preguntas de trivia general y cultura vasca.
-  Licencia CC BY 4.0. La traducción al español se realiza localmente con
-  Argos Translate.
+- **Trivia Single Choice (4 options)**:
+  <https://huggingface.co/datasets/Mihaiii/trivia_single_choice-4-options>
+- **BertaQA** — licencia CC BY 4.0:
   <https://huggingface.co/datasets/HiTZ/BertaQA>
 
-`build-question-bank.py` documenta la selección, el reparto por categorías y
-la traducción. El archivo generado `question-bank.json` queda incluido en el
-repositorio para que regenerar el SQL no requiera red ni dependencias Python.
+`build-hf-question-bank.py` clasifica por el campo temático explícito de Trivia
+Single Choice y traduce únicamente en local con Argos Translate. El generador
+prioriza esta fuente y MMMLU; BertaQA se utiliza solo después de aplicar todos
+los filtros de visualización.
+
+El banco final garantiza:
+
+- 1.000 preguntas `FREE_TEXT` y 4.000 `MULTIPLE_CHOICE`;
+- 50 preguntas de escritura libre en cada una de las 20 categorías;
+- una sola versión directa de cada enunciado, sin versión inversa;
+- enunciados de hasta 100 caracteres;
+- respuestas y opciones de hasta 45 caracteres;
+- cuatro opciones diferentes en cada pregunta tipo test;
+- ausencia de notación matemática o símbolos incompatibles;
+- 20 % de dificultad alta y 80 % media dentro de cada formato y categoría.
+
+Los snapshots JSON permiten regenerar el SQL sin red. Antes de cargar los datos,
+`seed-questions.sql` vuelve a validar los recuentos, duplicados y límites.

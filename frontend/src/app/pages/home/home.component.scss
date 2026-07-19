@@ -62,3 +62,24 @@
     flex-basis: 2.5rem;
   }
 }
+
+@media (max-width: 40rem) {
+  .home-shell {
+    align-items: flex-start;
+  }
+
+  .home-card {
+    min-height: 0;
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+  }
+
+  .home-title {
+    max-width: 100%;
+  }
+}
+
+@media (max-height: 46rem) and (orientation: landscape) {
+  .home-shell { padding-block: .5rem; }
+  .home-card { min-height: 0; }
+}

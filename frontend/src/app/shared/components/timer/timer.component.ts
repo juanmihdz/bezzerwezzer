@@ -6,7 +6,7 @@ import { NgClass } from '@angular/common';
   standalone: true,
   imports: [NgClass],
   templateUrl: './timer.component.html',
-  styleUrls: ['./timer.component.scss'],
+  styleUrl: './timer.component.scss',
 })
 export class TimerComponent {
   @Input({ required: true }) total!: number;

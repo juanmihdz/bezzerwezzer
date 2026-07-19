@@ -2,12 +2,14 @@ package com.bezzerwizzer.game;
 
 import com.bezzerwizzer.model.Question;
 import com.bezzerwizzer.model.enums.GamePhase;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Data
+@Getter
+@Setter
 public class GameRoom {
     public static final int BOARD_SIZE = 30;
     public static final int MAX_PLAYERS = 4;
@@ -23,6 +25,8 @@ public class GameRoom {
     private int currentRound = 0;
     /** Board position that wins the game, chosen by the host in the lobby. */
     private int winningPosition = BOARD_SIZE;
+    /** Whether each completed four-category cycle ends with the shared golden bonus. */
+    private boolean goldenQuestionEnabled = true;
     private int currentTurnPlayerIndex = 0;
     private int currentCategorySlotIndex = 0;
     
@@ -51,6 +55,8 @@ public class GameRoom {
     private long pausedPreparationMillis;
     private long zwapDeadlineAt;
     private long turnStartTime;
+    private long goldenQuestionDeadlineAt;
+    private Set<String> goldenQuestionSubmittedPlayerIds = ConcurrentHashMap.newKeySet();
     private long lastActivityAt = System.currentTimeMillis();
     private long finishedAt;
     private Set<String> connectedPlayerIds = ConcurrentHashMap.newKeySet();

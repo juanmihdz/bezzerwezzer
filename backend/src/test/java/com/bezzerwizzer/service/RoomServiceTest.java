@@ -42,5 +42,21 @@ class RoomServiceTest {
             () -> roomService.toggleReady(room.getRoomCode(), "host"));
         assertThrows(IllegalStateException.class,
             () -> roomService.joinRoom(room.getRoomCode(), "guest", "Luis"));
+        assertThrows(IllegalStateException.class,
+            () -> roomService.setGoldenQuestionEnabled(room.getRoomCode(), "host", false));
+    }
+
+    @Test
+    void onlyHostCanConfigureGoldenQuestionInLobby() {
+        GameRoom room = roomService.createRoom("host", "Ana");
+        roomService.joinRoom(room.getRoomCode(), "guest", "Luis");
+
+        assertTrue(room.isGoldenQuestionEnabled());
+        assertThrows(IllegalStateException.class,
+            () -> roomService.setGoldenQuestionEnabled(room.getRoomCode(), "guest", false));
+
+        roomService.setGoldenQuestionEnabled(room.getRoomCode(), "host", false);
+
+        assertFalse(room.isGoldenQuestionEnabled());
     }
 }

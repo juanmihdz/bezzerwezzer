@@ -6,7 +6,7 @@ import { NgClass } from '@angular/common';
   standalone: true,
   imports: [NgClass],
   templateUrl: './player-avatar.component.html',
-  styleUrls: ['./player-avatar.component.scss'],
+  styleUrl: './player-avatar.component.scss',
 })
 export class PlayerAvatarComponent {
   @Input({ required: true }) username!: string;

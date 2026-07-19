@@ -6,7 +6,7 @@ import { NgClass } from '@angular/common';
   standalone: true,
   imports: [NgClass],
   templateUrl: './category-badge.component.html',
-  styleUrls: ['./category-badge.component.scss'],
+  styleUrl: './category-badge.component.scss',
 })
 export class CategoryBadgeComponent {
   @Input({ required: true }) name!: string;

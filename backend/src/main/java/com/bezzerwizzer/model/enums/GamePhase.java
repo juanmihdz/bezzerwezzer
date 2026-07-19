@@ -9,5 +9,7 @@ public enum GamePhase {
     ANSWERING,
     TURN_RESULT,
     ROUND_END,
+    GOLDEN_QUESTION,
+    GOLDEN_RESULT,
     GAME_OVER
 }

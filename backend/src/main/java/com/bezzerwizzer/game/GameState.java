@@ -2,11 +2,12 @@ package com.bezzerwizzer.game;
 
 import com.bezzerwizzer.model.enums.GamePhase;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 
-@Data
+@Getter
 @Builder
 public class GameState {
     private String roomCode;
@@ -22,10 +23,13 @@ public class GameState {
     private CategoryInfo currentCategory;
     private int round;
     private int winningPosition;
+    private boolean goldenQuestionEnabled;
     private int timer;
     private Set<String> preparationSkipVotes;
+    private Map<String, Object> activeQuestion;
+    private Set<String> goldenQuestionSubmittedPlayerIds;
 
-    @Data
+    @Getter
     @Builder
     public static class CategoryInfo {
         private String name;

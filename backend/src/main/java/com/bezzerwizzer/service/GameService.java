@@ -30,8 +30,12 @@ public class GameService {
     private static final int REBOUND_SECONDS = 10;
     private static final int RESULT_DISPLAY_SECONDS = 4;
     private static final int REBOUND_RESULTS_DISPLAY_SECONDS = 6;
+    private static final int GOLDEN_QUESTION_SECONDS = 30;
+    private static final int GOLDEN_RESULT_DISPLAY_SECONDS = 6;
+    private static final int GOLDEN_QUESTION_POINTS = 2;
 
     private final RoomService roomService;
+    private final QuestionService questionService;
     private final RoundManager roundManager;
     private final TurnManager turnManager;
     private final ScoringService scoringService;
@@ -75,6 +79,7 @@ public class GameService {
         room.setPausedPreparationMillis(0);
         room.setZwapDeadlineAt(0);
         room.setTurnStartTime(0);
+        room.setGoldenQuestionDeadlineAt(0);
         room.setFinishedAt(0);
         room.getTurnOrder().clear();
         room.getUsedQuestionIds().clear();
@@ -85,6 +90,7 @@ public class GameService {
         room.getEarlyBezzerwizzers().clear();
         room.getPreparationSkipVotes().clear();
         room.getCategoryAssignmentConfirmed().clear();
+        room.getGoldenQuestionSubmittedPlayerIds().clear();
         // The host creates a fresh lobby. Other finished-game players must
         // explicitly choose to join the rematch instead of being carried over.
         room.getPlayers().entrySet().removeIf(entry -> !entry.getKey().equals(room.getHostPlayerId()));
@@ -158,6 +164,10 @@ public class GameService {
 
     public synchronized void handleAnswer(String roomCode, String playerId, AnswerDTO answer) {
         GameRoom room = roomService.getRoom(roomCode);
+        if (room.getPhase() == GamePhase.GOLDEN_QUESTION) {
+            handleGoldenAnswer(room, playerId, answer);
+            return;
+        }
         if (room.getPhase() != GamePhase.ANSWERING) {
             throw new com.bezzerwizzer.exception.GameException("No se puede responder en esta fase");
         }
@@ -180,6 +190,36 @@ public class GameService {
             return;
         }
         completeCurrentTurn(room, playerId, submitted);
+    }
+
+    private void handleGoldenAnswer(GameRoom room, String playerId, AnswerDTO answer) {
+        if (!room.getPlayers().containsKey(playerId)) {
+            throw new com.bezzerwizzer.exception.GameException("Jugador no encontrado");
+        }
+        if (answer == null || answer.getQuestionId() == null || room.getCurrentQuestion() == null
+                || !room.getCurrentQuestion().getId().toString().equals(answer.getQuestionId())) {
+            throw new com.bezzerwizzer.exception.GameException("La Pregunta Dorada ya no está activa");
+        }
+        if (!room.getGoldenQuestionSubmittedPlayerIds().add(playerId)) {
+            throw new com.bezzerwizzer.exception.GameException("Ya has enviado tu respuesta dorada");
+        }
+
+        String submitted = answer.getSelectedOption() != null
+                ? answer.getSelectedOption() : answer.getFreeTextAnswer();
+        boolean correct = scoringService.isCorrect(room.getCurrentQuestion(), submitted);
+        messagingTemplate.convertAndSend("/topic/room/" + room.getRoomCode() + "/game",
+                new GameEvent("GOLDEN_ANSWERED", Map.of(
+                        "playerId", playerId,
+                        "submittedCount", room.getGoldenQuestionSubmittedPlayerIds().size(),
+                        "playerCount", room.getPlayers().size())));
+
+        if (correct) {
+            finishGoldenQuestion(room, playerId);
+        } else if (room.getGoldenQuestionSubmittedPlayerIds().containsAll(room.getPlayers().keySet())) {
+            finishGoldenQuestion(room, null);
+        } else {
+            broadcastGameState(room);
+        }
     }
 
     private void savePreparedBezzerwizzerAnswer(GameRoom room, String playerId, String submitted) {
@@ -293,13 +333,58 @@ public class GameService {
         } else if (roundManager.advanceTurn(room)) {
             broadcastTurnReady(room);
         } else {
-            // Keep the final answer visible before replacing the board with
-            // the next category assignment. ROUND_END is inert, so no player
-            // can act while this short result beat is on screen.
-            scheduleNextRound(room.getRoomCode(), room.getCurrentRound(),
-                    hadRebound ? REBOUND_RESULTS_DISPLAY_SECONDS : RESULT_DISPLAY_SECONDS);
+            // Keep the final answer visible before opening the shared golden
+            // bonus. ROUND_END is inert during this short result beat.
+            int resultDelay = hadRebound ? REBOUND_RESULTS_DISPLAY_SECONDS : RESULT_DISPLAY_SECONDS;
+            if (room.isGoldenQuestionEnabled()) {
+                scheduleGoldenQuestion(room.getRoomCode(), room.getCurrentRound(), resultDelay);
+            } else {
+                scheduleNextRound(room.getRoomCode(), room.getCurrentRound(), resultDelay);
+            }
         }
         broadcastGameState(room);
+    }
+
+    private void scheduleGoldenQuestion(String roomCode, int completedRound, int delaySeconds) {
+        gameTimerScheduler.schedule(
+                () -> startGoldenQuestionIfStillComplete(roomCode, completedRound),
+                delaySeconds,
+                TimeUnit.SECONDS);
+    }
+
+    synchronized void startGoldenQuestionIfStillComplete(String roomCode, int completedRound) {
+        GameRoom room;
+        try {
+            room = roomService.getRoom(roomCode);
+        } catch (RuntimeException exception) {
+            // The room may have been closed while the result was being shown.
+            log.debug("Golden question cancelled because room {} is no longer available", roomCode);
+            return;
+        }
+
+        if (room.getPhase() != GamePhase.ROUND_END || room.getCurrentRound() != completedRound) {
+            return;
+        }
+
+        try {
+            startGoldenQuestion(room);
+        } catch (RuntimeException exception) {
+            // A missing or invalid writing-question bank must never strand a
+            // live room in ROUND_END. Log the real cause and recover by
+            // advancing the game; a corrected bank will restore the bonus on
+            // the following cycle.
+            log.error("Unable to start the golden question in room {}; advancing to the next round",
+                    roomCode, exception);
+            try {
+                if (room.getPhase() == GamePhase.ROUND_END && room.getCurrentRound() == completedRound) {
+                    roundManager.startNewRound(room);
+                    broadcastGameState(room);
+                }
+            } catch (RuntimeException recoveryException) {
+                log.error("Unable to recover room {} after golden-question failure",
+                        roomCode, recoveryException);
+            }
+        }
     }
 
     private void scheduleNextRound(String roomCode, int completedRound, int delaySeconds) {
@@ -312,12 +397,96 @@ public class GameService {
     private synchronized void startNextRoundIfStillComplete(String roomCode, int completedRound) {
         try {
             GameRoom room = roomService.getRoom(roomCode);
-            if (room.getPhase() == GamePhase.ROUND_END && room.getCurrentRound() == completedRound) {
+            if (room.getPhase() == GamePhase.ROUND_END && room.getCurrentRound() == completedRound
+                    && !room.isGoldenQuestionEnabled()) {
                 roundManager.startNewRound(room);
                 broadcastGameState(room);
             }
         } catch (RuntimeException ignored) {
-            // The room may have been closed while the result was being shown.
+            // The room may have closed while the result was being shown.
+        }
+    }
+
+    private void startGoldenQuestion(GameRoom room) {
+        room.setCurrentQuestion(questionService.getRandomGoldenQuestion(room.getUsedQuestionIds(), "es"));
+        room.setCurrentAnswerPlayerId(null);
+        room.getGoldenQuestionSubmittedPlayerIds().clear();
+        room.setGoldenQuestionDeadlineAt(
+                System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(GOLDEN_QUESTION_SECONDS));
+        room.setPhase(GamePhase.GOLDEN_QUESTION);
+
+        messagingTemplate.convertAndSend("/topic/room/" + room.getRoomCode() + "/game",
+                new GameEvent("GOLDEN_QUESTION_START", Map.of(
+                        "question", safeQuestion(room.getCurrentQuestion(), true),
+                        "timeLimit", GOLDEN_QUESTION_SECONDS,
+                        "points", GOLDEN_QUESTION_POINTS)));
+        broadcastGameState(room);
+        scheduleGoldenQuestionTimeout(room.getRoomCode(), room.getCurrentQuestion().getId().toString(),
+                room.getGoldenQuestionDeadlineAt());
+    }
+
+    private void scheduleGoldenQuestionTimeout(String roomCode, String questionId, long expectedDeadlineAt) {
+        long delay = Math.max(0, expectedDeadlineAt - System.currentTimeMillis());
+        gameTimerScheduler.schedule(
+                () -> finishGoldenQuestionIfStillActive(roomCode, questionId, expectedDeadlineAt),
+                delay,
+                TimeUnit.MILLISECONDS);
+    }
+
+    private synchronized void finishGoldenQuestionIfStillActive(
+            String roomCode, String questionId, long expectedDeadlineAt) {
+        try {
+            GameRoom room = roomService.getRoom(roomCode);
+            if (room.getPhase() == GamePhase.GOLDEN_QUESTION
+                    && room.getCurrentQuestion() != null
+                    && questionId.equals(room.getCurrentQuestion().getId().toString())
+                    && expectedDeadlineAt == room.getGoldenQuestionDeadlineAt()) {
+                finishGoldenQuestion(room, null);
+            }
+        } catch (RuntimeException ignored) {
+            // An answer or room closure superseded this timeout.
+        }
+    }
+
+    private void finishGoldenQuestion(GameRoom room, String winnerPlayerId) {
+        if (room.getPhase() != GamePhase.GOLDEN_QUESTION) return;
+
+        if (winnerPlayerId != null) {
+            scoringService.movePlayer(room, room.getPlayers().get(winnerPlayerId), GOLDEN_QUESTION_POINTS);
+        }
+        room.setGoldenQuestionDeadlineAt(0);
+        room.setPhase(GamePhase.GOLDEN_RESULT);
+
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("winnerPlayerId", winnerPlayerId);
+        result.put("points", winnerPlayerId == null ? 0 : GOLDEN_QUESTION_POINTS);
+        result.put("correctAnswer", scoringService.correctAnswerText(room.getCurrentQuestion()));
+        messagingTemplate.convertAndSend("/topic/room/" + room.getRoomCode() + "/game",
+                new GameEvent("GOLDEN_QUESTION_RESULT", result));
+        broadcastGameState(room);
+
+        gameTimerScheduler.schedule(
+                () -> finishGoldenResult(room.getRoomCode(), room.getCurrentQuestion().getId().toString()),
+                GOLDEN_RESULT_DISPLAY_SECONDS,
+                TimeUnit.SECONDS);
+    }
+
+    private synchronized void finishGoldenResult(String roomCode, String questionId) {
+        try {
+            GameRoom room = roomService.getRoom(roomCode);
+            if (room.getPhase() != GamePhase.GOLDEN_RESULT || room.getCurrentQuestion() == null
+                    || !questionId.equals(room.getCurrentQuestion().getId().toString())) {
+                return;
+            }
+            if (scoringService.checkWinCondition(room).isPresent()) {
+                room.setPhase(GamePhase.GAME_OVER);
+                room.setFinishedAt(System.currentTimeMillis());
+            } else {
+                roundManager.startNewRound(room);
+            }
+            broadcastGameState(room);
+        } catch (RuntimeException ignored) {
+            // The room may have closed while the bonus result was displayed.
         }
     }
 
@@ -432,12 +601,7 @@ public class GameService {
         var question = room.getCurrentQuestion();
         var slot = room.getPlayers().get(room.getCurrentTurnPlayerId())
                 .getCategorySlots().get(room.getCurrentCategorySlotIndex());
-        Map<String, Object> safeQuestion = new java.util.LinkedHashMap<>();
-        safeQuestion.put("id", question.getId().toString());
-        safeQuestion.put("questionText", question.getQuestionText());
-        safeQuestion.put("questionType", question.getQuestionType());
-        safeQuestion.put("options", question.getQuestionType() == com.bezzerwizzer.model.enums.QuestionType.MULTIPLE_CHOICE
-                ? List.of(question.getOptionA(), question.getOptionB(), question.getOptionC(), question.getOptionD()) : null);
+        Map<String, Object> safeQuestion = safeQuestion(question, false);
         safeQuestion.put("categoryName", slot.getCategory().getName());
         safeQuestion.put("categoryIcon", slot.getCategory().getIcon());
         safeQuestion.put("categoryColor", slot.getCategory().getColor());
@@ -521,15 +685,20 @@ public class GameService {
 
     public void broadcastGameState(GameRoom room) {
         GameState.CategoryInfo catInfo = null;
-        if (room.getCurrentQuestion() != null) {
+        if (room.getCurrentQuestion() != null
+                && room.getCurrentTurnPlayerId() != null
+                && room.getCurrentCategorySlotIndex() < GameRoom.CATEGORIES_PER_ROUND) {
             PlayerState currentTurnPlayer = room.getPlayers().get(room.getCurrentTurnPlayerId());
-            CategorySlot currentSlot = currentTurnPlayer.getCategorySlots().get(room.getCurrentCategorySlotIndex());
-            catInfo = GameState.CategoryInfo.builder()
-                .name(currentSlot.getCategory().getName())
-                .icon(currentSlot.getCategory().getIcon())
-                .color(currentSlot.getCategory().getColor())
-                .pointValue(currentSlot.getPointValue())
-                .build();
+            if (currentTurnPlayer != null
+                    && room.getCurrentCategorySlotIndex() < currentTurnPlayer.getCategorySlots().size()) {
+                CategorySlot currentSlot = currentTurnPlayer.getCategorySlots().get(room.getCurrentCategorySlotIndex());
+                catInfo = GameState.CategoryInfo.builder()
+                    .name(currentSlot.getCategory().getName())
+                    .icon(currentSlot.getCategory().getIcon())
+                    .color(currentSlot.getCategory().getColor())
+                    .pointValue(currentSlot.getPointValue())
+                    .build();
+            }
         }
 
         GameState state = GameState.builder()
@@ -546,14 +715,22 @@ public class GameService {
             .currentCategory(catInfo)
             .round(room.getCurrentRound())
             .winningPosition(room.getWinningPosition())
+            .goldenQuestionEnabled(room.isGoldenQuestionEnabled())
             .timer(remainingPreparationSeconds(room))
             .preparationSkipVotes(Set.copyOf(room.getPreparationSkipVotes()))
+            .activeQuestion(room.getPhase() == GamePhase.GOLDEN_QUESTION
+                    ? safeQuestion(room.getCurrentQuestion(), true) : null)
+            .goldenQuestionSubmittedPlayerIds(Set.copyOf(room.getGoldenQuestionSubmittedPlayerIds()))
             .build();
 
         messagingTemplate.convertAndSend("/topic/room/" + room.getRoomCode() + "/game", new GameEvent("GAME_STATE", state));
     }
 
     private int remainingPreparationSeconds(GameRoom room) {
+        if (room.getPhase() == GamePhase.GOLDEN_QUESTION) {
+            return Math.max(0, (int) Math.ceil(
+                    (room.getGoldenQuestionDeadlineAt() - System.currentTimeMillis()) / 1000.0));
+        }
         long deadline = room.getPhase() == GamePhase.ZWAP ? room.getZwapDeadlineAt() : room.getPreparationDeadlineAt();
         if (room.getPhase() != GamePhase.PLAYING && room.getPhase() != GamePhase.ZWAP) return 0;
         return Math.max(0, (int) Math.ceil((deadline - System.currentTimeMillis()) / 1000.0));
@@ -583,5 +760,23 @@ public class GameService {
     private String displayName(PlayerState player) {
         return player.getUsername() == null || player.getUsername().isBlank()
                 ? player.getPlayerId() : player.getUsername();
+    }
+
+    private Map<String, Object> safeQuestion(Question question, boolean golden) {
+        Map<String, Object> safe = new java.util.LinkedHashMap<>();
+        safe.put("id", question.getId().toString());
+        safe.put("questionText", question.getQuestionText());
+        safe.put("questionType", question.getQuestionType());
+        safe.put("options", question.getQuestionType() == com.bezzerwizzer.model.enums.QuestionType.MULTIPLE_CHOICE
+                ? List.of(question.getOptionA(), question.getOptionB(), question.getOptionC(), question.getOptionD())
+                : null);
+        if (golden) {
+            safe.put("categoryName", "Pregunta Dorada");
+            safe.put("categoryIcon", "★");
+            safe.put("categoryColor", "#f6c453");
+            safe.put("pointValue", GOLDEN_QUESTION_POINTS);
+            safe.put("golden", true);
+        }
+        return safe;
     }
 }

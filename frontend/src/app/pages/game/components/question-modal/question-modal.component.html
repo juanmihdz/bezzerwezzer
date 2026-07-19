@@ -1,19 +1,22 @@
 @if (question) {
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+  <div class="question-overlay fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
     <!-- High Blur Immersive Backdrop -->
-    <div class="absolute inset-0 bg-black/80 backdrop-blur-2xl animate-fade-in"></div>
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-2xl animate-fade-in"
+         [class.golden-backdrop]="isGoldenQuestion"></div>
     <!-- Modal Content -->
     <div
-      class="relative w-full max-w-4xl max-h-[94dvh] flex flex-col glass-strong rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-[0_1.5625rem_3.75rem_rgba(0,0,0,0.6)] animate-bounce-in border"
+      class="question-dialog relative w-full max-w-4xl max-h-[94dvh] flex flex-col glass-strong rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-[0_1.5625rem_3.75rem_rgba(0,0,0,0.6)] animate-bounce-in border"
+      [class.golden-question]="isGoldenQuestion"
       [style.borderColor]="question.categoryColor + '50'"
       [style.boxShadow]="'0 0 3.125rem ' + question.categoryColor + '15'"
     >
       <!-- Header / Category Color Bar -->
-      <div class="h-4 w-full" [style.backgroundColor]="question.categoryColor"></div>
+      <div class="h-4 w-full question-color-bar" [style.backgroundColor]="question.categoryColor"></div>
       <!-- Main Content Area -->
-      <div class="p-5 sm:p-7 md:p-10 flex flex-col flex-grow overflow-y-auto">
-        <div class="flex justify-between items-center gap-5 mb-7">
+      <div class="question-body p-5 sm:p-7 md:p-10 flex flex-col flex-grow overflow-y-auto">
+        <div class="question-heading flex justify-between items-center gap-5 mb-7">
           <!-- Category Badge Capsule -->
+          @if (!isGoldenQuestion) {
           <div
             class="flex items-center gap-4 bg-black/40 p-2 pr-6 rounded-full border border-white/5 shadow-inner"
           >
@@ -36,10 +39,27 @@
               </h3>
             </div>
           </div>
+          } @else {
+            <div class="golden-title" aria-label="Pregunta Dorada, ronda de bonificación">
+              <span class="golden-title__star" aria-hidden="true">★</span>
+              <div>
+                <span>Ronda bonus</span>
+                <h3>Pregunta Dorada</h3>
+              </div>
+              <strong>+2</strong>
+            </div>
+          }
           <div class="flex-none p-1" aria-label="Tiempo restante">
             <app-timer [total]="timerTotal" [remaining]="timer" size="sm"></app-timer>
           </div>
         </div>
+        @if (isGoldenQuestion) {
+          <div class="golden-rules" role="status" aria-live="polite">
+            <span aria-hidden="true">⚡</span>
+            <strong>Todos responden a la vez</strong>
+            <span>El primer acierto gana 2 puntos</span>
+          </div>
+        } @else {
         <div class="mb-6 flex flex-wrap items-center justify-center gap-2" role="status" aria-live="polite">
           <span class="rounded-full border px-3 py-1.5 text-[0.65rem] font-black uppercase tracking-widest"
                 [ngClass]="isReboundTurn ? 'border-pink-400/60 bg-pink-500/20 text-white shadow-[0_0_1.125rem_rgba(236,72,153,0.25)]' : 'border-white/15 bg-white/5 text-white/70'">
@@ -56,7 +76,8 @@
             }
           }
         </div>
-        @if (canBezzerwizzer) {
+        }
+        @if (canBezzerwizzer && !isGoldenQuestion) {
           <button
             type="button"
             (click)="onBezzerwizzer.emit()"
@@ -69,6 +90,7 @@
         <div class="text-center mb-8 px-1 md:px-8">
           <h2
             class="text-2xl sm:text-3xl md:text-4xl font-display font-black leading-tight drop-shadow-md text-white tracking-wide"
+            [class.golden-question-text]="isGoldenQuestion"
           >
             {{ question.questionText }}
           </h2>
@@ -117,7 +139,7 @@
                   [disabled]="isAnswered || selectionFailed"
                   (keyup.enter)="submitFreeText()"
                   placeholder="Escribe tu respuesta aquí..."
-                  class="input-glass w-full text-center text-3xl p-6 font-bold"
+                  class="question-free-text input-glass w-full text-center text-3xl p-6 font-bold"
                 />
               </div>
               @if (canChangeAnswer) {
@@ -129,12 +151,17 @@
                 (click)="submitFreeText()"
                 [disabled]="isAnswered || selectionFailed || !freeTextValue.trim()"
                 class="btn-primary w-full max-w-xs text-xl font-bold py-5 rounded-2xl shadow-lg transition-all"
+                [class.golden-submit]="isGoldenQuestion"
                 [class.ring-4]="canChangeAnswer && freeTextPrepared"
                 [class.ring-primary-light]="canChangeAnswer && freeTextPrepared"
                 [class.bg-correct]="canChangeAnswer && freeTextPrepared"
                 [class.scale-105]="canChangeAnswer && freeTextPrepared"
               >
-                @if (canChangeAnswer && freeTextPrepared) {
+                @if (isGoldenQuestion && isAnswered) {
+                  ✓ RESPUESTA ENVIADA
+                } @else if (isGoldenQuestion) {
+                  ENVIAR · OPTAR A +2
+                } @else if (canChangeAnswer && freeTextPrepared) {
                   ✓ RESPUESTA PREPARADA
                 } @else if (canChangeAnswer) {
                   GUARDAR PARA EL REBOTE

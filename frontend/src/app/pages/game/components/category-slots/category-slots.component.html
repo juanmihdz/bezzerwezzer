@@ -18,11 +18,11 @@
         class="category-row relative group"
         [class.is-assigning]="isAssigning"
         [class.is-dragging]="draggedIndex === i"
-        [class.is-drop-target]="dropTargetIndex === i"
         [class.opacity-40]="slot.answered"
         [class.grayscale]="slot.answered"
         cdkDrag
         [cdkDragDisabled]="!isAssigning"
+        cdkDragLockAxis="y"
         [attr.tabindex]="isAssigning ? 0 : null"
         [attr.data-category-index]="i"
         [attr.aria-label]="
@@ -33,6 +33,8 @@
               ' puntos. Arrastra o usa las flechas para intercambiar su puntuación.'
             : null
         "
+        (cdkDragStarted)="startDrag(i)"
+        (cdkDragEnded)="endDrag()"
         (keydown)="moveWithKeyboard($event, i)"
       >
         <app-category-badge

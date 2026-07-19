@@ -27,17 +27,44 @@
     </div>
   </div>
 
-  <section class="round-settings" aria-label="Meta de la partida" aria-live="polite">
-    <div>
-      <span class="round-settings__eyebrow">Meta de la partida</span>
+  <section class="round-settings" aria-label="Configuración de la partida" aria-live="polite">
+    <div class="round-settings__goal">
+      <div>
+        <span class="round-settings__eyebrow">Meta de la partida</span>
+      </div>
+      <div class="round-settings__choices" role="group" aria-label="Casilla final">
+        @for (position of [10, 15, 20, 25, 30]; track position) {
+          <button type="button" [class.is-selected]="winningPosition() === position" (click)="setWinningPosition(position)" [disabled]="!canManageLobby" [attr.aria-pressed]="winningPosition() === position">
+            {{ position }}
+          </button>
+        }
+      </div>
     </div>
-    <div class="round-settings__choices" role="group" aria-label="Casilla final">
-      @for (position of [10, 15, 20, 25, 30]; track position) {
-        <button type="button" [class.is-selected]="winningPosition() === position" (click)="setWinningPosition(position)" [disabled]="!canManageLobby" [attr.aria-pressed]="winningPosition() === position">
-          {{ position }}
-        </button>
-      }
-    </div>
+    <button
+      type="button"
+      class="golden-setting"
+      [class.is-enabled]="goldenQuestionEnabled()"
+      [class.is-readonly]="!canManageLobby"
+      (click)="setGoldenQuestionEnabled(!goldenQuestionEnabled())"
+      [disabled]="!canManageLobby"
+      [attr.aria-pressed]="goldenQuestionEnabled()"
+      [attr.aria-label]="canManageLobby
+        ? (goldenQuestionEnabled() ? 'Desactivar Pregunta Dorada' : 'Activar Pregunta Dorada')
+        : (goldenQuestionEnabled() ? 'Pregunta Dorada activada por el anfitrión' : 'Pregunta Dorada desactivada por el anfitrión')"
+    >
+      <span class="golden-setting__star" aria-hidden="true">★</span>
+      <span class="golden-setting__copy">
+        <strong>Pregunta Dorada</strong>
+        <small>
+          @if (canManageLobby) {
+            {{ goldenQuestionEnabled() ? 'Bonus de +2 activado' : 'Bonus desactivado' }}
+          } @else {
+            {{ goldenQuestionEnabled() ? 'Activada por el anfitrión · Bonus +2' : 'Desactivada por el anfitrión' }}
+          }
+        </small>
+      </span>
+      <span class="golden-setting__switch" aria-hidden="true"><i></i></span>
+    </button>
   </section>
 
   <div class="players-grid">
@@ -83,6 +110,16 @@
               <span>Estoy listo</span>
             }
           </button>
+        } @else if (canManageLobby && player.playerId !== hostId()) {
+          <button
+            type="button"
+            class="kick-button"
+            (click)="kickPlayer(player)"
+            [attr.aria-label]="'Expulsar a ' + player.username"
+            title="Expulsar de la sala">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h5M14 8l4 4-4 4M18 12H9"/></svg>
+            <span>Expulsar</span>
+          </button>
         }
       </article>
     }
@@ -116,3 +153,32 @@
     }
   </footer>
 </section>
+
+@if (pendingKickPlayer(); as player) {
+  <div class="kick-confirmation-backdrop" (click)="cancelKick()" (keydown.escape)="cancelKick()">
+    <section
+      class="kick-confirmation-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="kick-confirmation-title"
+      aria-describedby="kick-confirmation-description"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="kick-confirmation-dialog__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M10 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h5M14 8l4 4-4 4M18 12H9"/></svg>
+      </div>
+      <span class="kick-confirmation-dialog__eyebrow">Gestión de sala</span>
+      <h2 id="kick-confirmation-title">¿Expulsar jugador?</h2>
+      <p id="kick-confirmation-description">
+        <strong>{{ player.username }}</strong> saldrá de la sala y tendrá que volver a unirse con el código.
+      </p>
+      <div class="kick-confirmation-dialog__actions">
+        <button type="button" class="kick-confirmation-dialog__cancel" (click)="cancelKick()">Cancelar</button>
+        <button type="button" class="kick-confirmation-dialog__confirm" (click)="confirmKick()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h5M14 8l4 4-4 4M18 12H9"/></svg>
+          Expulsar
+        </button>
+      </div>
+    </section>
+  </div>
+}

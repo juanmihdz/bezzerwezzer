@@ -57,6 +57,10 @@ export class GameStateService {
     ...(ngDevMode ? [{ debugName: "bezzerwizzerAnswered" }] : /* istanbul ignore next */ []));
     tacticalAnnouncement = signal(null, /* @ts-ignore */
     ...(ngDevMode ? [{ debugName: "tacticalAnnouncement" }] : /* istanbul ignore next */ []));
+    goldenQuestionSubmittedPlayerIds = signal([], /* @ts-ignore */
+    ...(ngDevMode ? [{ debugName: "goldenQuestionSubmittedPlayerIds" }] : /* istanbul ignore next */ []));
+    goldenQuestionResult = signal(null, /* @ts-ignore */
+    ...(ngDevMode ? [{ debugName: "goldenQuestionResult" }] : /* istanbul ignore next */ []));
     tacticalAnnouncementTimeout;
     // Computed State
     isMyTurn = computed(() => this.currentTurnPlayerId() === this.authService.playerId(), /* @ts-ignore */
@@ -155,8 +159,8 @@ export class GameStateService {
                 this.gamePhase.set('PLAYING');
                 this.preparationSkipVotes.set([]);
                 this.turnSequence.update(value => value + 1);
-                this.startTimer(turn.timeLimit ?? 10);
-                this.timerTotal.set(turn.timeLimit ?? 10);
+                this.startTimer(turn.timeLimit ?? 15);
+                this.timerTotal.set(turn.timeLimit ?? 15);
                 break;
             }
             case 'TURN_START': {
@@ -169,14 +173,41 @@ export class GameStateService {
                 this.gamePhase.set('ANSWERING');
                 this.bezzerwizzerResults.set([]);
                 this.answerResults.set([]);
+                this.audioService.playQuestionStart();
                 break;
             }
+            case 'GOLDEN_QUESTION_START': {
+                const golden = event.payload;
+                this.currentQuestion.set(golden.question);
+                this.currentTurnPlayerId.set('');
+                this.currentAnswerPlayerId.set('');
+                this.goldenQuestionSubmittedPlayerIds.set([]);
+                this.goldenQuestionResult.set(null);
+                this.lastAnswerResult.set(null);
+                this.answerResults.set([]);
+                this.gamePhase.set('GOLDEN_QUESTION');
+                this.startTimer(golden.timeLimit ?? 30);
+                this.timerTotal.set(golden.timeLimit ?? 30);
+                this.audioService.playQuestionStart();
+                break;
+            }
+            case 'GOLDEN_ANSWERED': {
+                const submitted = event.payload;
+                this.goldenQuestionSubmittedPlayerIds.update(ids => ids.includes(submitted.playerId) ? ids : [...ids, submitted.playerId]);
+                break;
+            }
+            case 'GOLDEN_QUESTION_RESULT':
+                this.stopTimer();
+                this.goldenQuestionResult.set(event.payload);
+                this.gamePhase.set('GOLDEN_RESULT');
+                break;
             case 'ANSWERING_STARTED': {
                 const answering = event.payload;
                 this.currentAnswerPlayerId.set(answering.playerId);
                 this.gamePhase.set('ANSWERING');
                 this.startTimer(answering.timeLimit ?? 30);
                 this.timerTotal.set(answering.timeLimit ?? 30);
+                this.audioService.playQuestionStart();
                 break;
             }
             case 'BEZZERWIZZER_ANSWERED':
@@ -192,7 +223,14 @@ export class GameStateService {
                 this.players.update(players => players.map(player => player.playerId === result.playerId
                     ? { ...player, boardPosition: Math.max(0, player.boardPosition + result.points) }
                     : player));
-                this.gamePhase.set('TURN_RESULT');
+                // A failed answer with pending rebounds is still the same question.
+                // Keeping ANSWERING here preserves the mounted question modal while
+                // ANSWERING_STARTED only updates the active player and its timer.
+                // Switching briefly to TURN_RESULT would destroy and recreate the
+                // modal, replaying its entrance animation for every rebound.
+                if (!result.reboundContinues) {
+                    this.gamePhase.set('TURN_RESULT');
+                }
                 break;
             }
             case 'BEZZERWIZZER_RESULT': {
@@ -257,6 +295,11 @@ export class GameStateService {
         this.currentRound.set(state.round);
         this.winningPosition.set(state.winningPosition ?? this.winningPosition());
         this.preparationSkipVotes.set(state.preparationSkipVotes ?? []);
+        this.goldenQuestionSubmittedPlayerIds.set(state.goldenQuestionSubmittedPlayerIds ?? []);
+        if (state.phase === 'GOLDEN_QUESTION' && state.activeQuestion) {
+            this.currentQuestion.set(state.activeQuestion);
+            this.timerTotal.set(30);
+        }
         if (state.timer && state.timer > 0) {
             this.startTimer(state.timer);
         }
@@ -311,6 +354,8 @@ export class GameStateService {
         this.bezzerwizzerPlayers.set([]);
         this.bezzerwizzerAnswered.set([]);
         this.tacticalAnnouncement.set(null);
+        this.goldenQuestionSubmittedPlayerIds.set([]);
+        this.goldenQuestionResult.set(null);
         window.clearTimeout(this.tacticalAnnouncementTimeout);
         this.stopTimer();
     }

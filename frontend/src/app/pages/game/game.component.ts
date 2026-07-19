@@ -114,7 +114,8 @@ export class GameComponent {
         }
       }
 
-      if (phase === 'ANSWERING' || phase === 'BEZZERWIZZER_WINDOW' || phase === 'TURN_RESULT' || phase === 'ROUND_END') {
+      if (phase === 'ANSWERING' || phase === 'BEZZERWIZZER_WINDOW' || phase === 'TURN_RESULT'
+          || phase === 'ROUND_END' || phase === 'GOLDEN_QUESTION' || phase === 'GOLDEN_RESULT') {
         // Results, answer prompts and rebound states take priority over the
         // mobile drawer so their feedback is never obscured.
         this.mobileSection = 'board';
@@ -122,6 +123,18 @@ export class GameComponent {
 
       if (phase === 'ANSWERING') {
         this.hasAnswered = false;
+      }
+
+      if (phase === 'GOLDEN_QUESTION' || phase === 'GOLDEN_RESULT') {
+        // The final category result and the golden question can transition at
+        // the same instant. The result overlay is local component state, so
+        // clearing lastAnswerResult in GameStateService does not hide it by
+        // itself. Dismiss it explicitly before mounting the bonus question.
+        this.dismissResultOverlay();
+      }
+
+      if (phase === 'GOLDEN_QUESTION') {
+        this.hasAnswered = this.gameState.goldenQuestionSubmittedPlayerIds().includes(this.authService.playerId());
       }
 
       if (phase === 'ROUND_END') {
@@ -136,6 +149,7 @@ export class GameComponent {
         this.dismissResultOverlay();
         this.gameState.answerResults.set([]);
         this.gameState.bezzerwizzerResults.set([]);
+        this.gameState.goldenQuestionResult.set(null);
       }
 
       if (phase === 'PLAYING' && this.showZwapSelector) {
@@ -214,6 +228,10 @@ export class GameComponent {
   }
 
   get canAnswerQuestion(): boolean {
+    if (this.gameState.gamePhase() === 'GOLDEN_QUESTION') {
+      return !this.hasAnswered
+        && !this.gameState.goldenQuestionSubmittedPlayerIds().includes(this.authService.playerId());
+    }
     if (this.hasAnswered) return false;
     return this.gameState.gamePhase() === 'ANSWERING' &&
       (this.gameState.isMyAnswer() || this.gameState.canSubmitPreparedBezzerwizzer());
@@ -230,7 +248,16 @@ export class GameComponent {
   get showQuestionModal(): boolean {
     const phase = this.gameState.gamePhase();
     if (!this.gameState.currentQuestion()) return false;
-    return phase === 'ANSWERING';
+    return phase === 'ANSWERING' || phase === 'GOLDEN_QUESTION';
+  }
+
+  get isGoldenQuestion(): boolean {
+    return this.gameState.gamePhase() === 'GOLDEN_QUESTION';
+  }
+
+  get goldenWinnerName(): string {
+    const winnerId = this.gameState.goldenQuestionResult()?.winnerPlayerId;
+    return winnerId ? this.getPlayerName(winnerId) : '';
   }
 
   get currentTurnPlayerName(): string {
@@ -280,6 +307,8 @@ export class GameComponent {
       case 'ZWAP': return 'ZWAP EN CURSO';
       case 'BEZZERWIZZER_WINDOW': return '¡BEZZERWIZZER!';
       case 'ANSWERING': return 'RESPONDIENDO';
+      case 'GOLDEN_QUESTION': return '★ PREGUNTA DORADA';
+      case 'GOLDEN_RESULT': return 'BONUS DORADO';
       default: return 'RONDA ' + this.gameState.currentRound();
     }
   }

@@ -1,3 +1,4 @@
+@import '@angular/cdk/overlay-prebuilt.css';
 @import "tailwindcss";
 @source "./app/**/*.{html,ts}";
 
@@ -30,6 +31,9 @@ html {
   color-scheme: dark;
   background: var(--color-surface);
   font-size: 100%;
+  min-height: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -52,6 +56,7 @@ body {
   position: relative;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
 }
 
 body::after {
@@ -63,6 +68,25 @@ body::after {
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.24'/%3E%3C/svg%3E");
   mix-blend-mode: soft-light;
+}
+
+.cdk-overlay-backdrop.rules-overlay-backdrop {
+  background: rgb(3 5 16 / .76);
+  backdrop-filter: blur(.625rem);
+  -webkit-backdrop-filter: blur(.625rem);
+}
+
+.cdk-overlay-pane.rules-overlay-panel {
+  width: min(48rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+}
+
+@media (max-width: 37.5rem) {
+  .cdk-overlay-pane.rules-overlay-panel {
+    width: calc(100vw - 1rem);
+    height: calc(100dvh - 1rem);
+    max-height: none;
+  }
 }
 
 /* The palette stays intentionally restrained: light is reserved for active play. */
@@ -278,6 +302,25 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (max-width: 40rem) {
   ::-webkit-scrollbar { width: 0.375rem; height: 0.375rem; }
+
+  button,
+  input,
+  select,
+  textarea {
+    min-height: 2.75rem;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+
+  .glass,
+  .glass-strong {
+    backdrop-filter: blur(.9rem) saturate(125%);
+    -webkit-backdrop-filter: blur(.9rem) saturate(125%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

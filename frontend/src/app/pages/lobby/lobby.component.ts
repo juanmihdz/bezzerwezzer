@@ -1,4 +1,4 @@
-import { Component, inject, computed, effect } from '@angular/core';
+import { Component, inject, computed, effect, OnDestroy, signal } from '@angular/core';
 
 import { ActivatedRoute, Router } from '@angular/router';
 import { GameStateService } from '../../core/services/game-state.service';
@@ -7,6 +7,8 @@ import { WebsocketService } from '../../core/services/websocket.service';
 import { PlayerAvatarComponent } from '../../shared/components/player-avatar/player-avatar.component';
 import { SnackbarService } from '../../core/services/snackbar.service';
 import { RulesHelpComponent } from '../../shared/components/rules-help/rules-help.component';
+import { GameEvent } from '../../shared/models/game.model';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-lobby',
@@ -15,7 +17,7 @@ import { RulesHelpComponent } from '../../shared/components/rules-help/rules-hel
   templateUrl: './lobby.component.html',
   styleUrl: './lobby.component.scss',
 })
-export class LobbyComponent {
+export class LobbyComponent implements OnDestroy {
   private gameState = inject(GameStateService);
   private authService = inject(AuthService);
   private wsService = inject(WebsocketService);
@@ -30,6 +32,9 @@ export class LobbyComponent {
   myUsername = this.authService.username;
   isHost = this.gameState.isHost;
   winningPosition = this.gameState.winningPosition;
+  goldenQuestionEnabled = this.gameState.goldenQuestionEnabled;
+  pendingKickPlayer = signal<{ playerId: string; username: string } | null>(null);
+  private personalSubscription = new Subscription();
 
   emptySlots = computed(() => {
     const count = Math.max(0, 4 - this.players().length);
@@ -63,6 +68,10 @@ export class LobbyComponent {
     });
   }
 
+  ngOnDestroy(): void {
+    this.personalSubscription.unsubscribe();
+  }
+
   private async joinRoomFromUrl(): Promise<void> {
     const code = this.route.snapshot.paramMap.get('code')?.trim().toUpperCase();
     if (!code || !/^[A-Z0-9]{6}$/.test(code)) {
@@ -79,6 +88,16 @@ export class LobbyComponent {
 
     try {
       await this.wsService.connect(this.authService.token());
+      this.personalSubscription.add(this.wsService.subscribeToPersonal<GameEvent>().subscribe(event => {
+        if (event.type !== 'KICKED_FROM_ROOM') return;
+
+        const payload = event.payload as { roomCode?: string };
+        if (payload.roomCode !== code) return;
+
+        this.gameState.reset();
+        this.snackbarService.show('El anfitrión te ha expulsado de la sala', 'warning');
+        void this.router.navigate(['/']);
+      }));
       this.gameState.connectToRoom(code);
       this.wsService.send(`/app/room/${code}/join`, {});
     } catch (error) {
@@ -106,5 +125,30 @@ export class LobbyComponent {
   setWinningPosition(position: number): void {
     if (!this.canManageLobby || position === this.winningPosition()) return;
     this.wsService.send(`/app/room/${this.roomCode()}/winning-position`, { winningPosition: position });
+  }
+
+  setGoldenQuestionEnabled(enabled: boolean): void {
+    if (!this.canManageLobby || enabled === this.goldenQuestionEnabled()) return;
+    this.wsService.send(`/app/room/${this.roomCode()}/golden-question`, { enabled });
+  }
+
+  kickPlayer(player: { playerId: string; username: string }): void {
+    if (!this.canManageLobby || player.playerId === this.hostId()) return;
+    this.pendingKickPlayer.set(player);
+  }
+
+  cancelKick(): void {
+    this.pendingKickPlayer.set(null);
+  }
+
+  confirmKick(): void {
+    const player = this.pendingKickPlayer();
+    if (!player || !this.canManageLobby || player.playerId === this.hostId()) {
+      this.cancelKick();
+      return;
+    }
+
+    this.wsService.send(`/app/room/${this.roomCode()}/kick`, { playerId: player.playerId });
+    this.cancelKick();
   }
 }
